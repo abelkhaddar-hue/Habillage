@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Alternances</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+/* Layout: colonnes étroites et hautes comme les pilules ; hero en deux colonnes (titre vertical / panneau animé), puis sections empilées sur une grille de 11 colonnes */
+:root{
+  --paper:#fbfbf7; --ink:#23231d; --muted:#6d6c60; --line:#e2e1d6; --sheet:#ffffff; --ochre:#7d6c12;
+  --y:#f1eccb; --g:#e7e7e7;
+  --display:"Big Shoulders Display","Arial Narrow",sans-serif;
+  --body:"Instrument Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#191916; --ink:#efeee6; --muted:#a3a194; --line:#34332c; --sheet:#22221e; --ochre:#e2d07a; color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#191916; --ink:#efeee6; --muted:#a3a194; --line:#34332c; --sheet:#22221e; --ochre:#e2d07a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+.in{max-width:1180px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+a{color:var(--ochre)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--ochre);outline-offset:3px;border-radius:4px}
+
+nav.top{padding-block:18px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.mark{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:.06em;text-transform:uppercase;display:flex;gap:8px;align-items:center;color:var(--ink);text-decoration:none}
+.mark i{display:inline-block;width:7px;height:20px;border-radius:4px;background:var(--y)}
+.mark i+i{background:var(--g);transform:translateY(5px)}
+nav.top ul{display:flex;gap:20px;list-style:none;margin:0;padding:0;font-size:14px;flex-wrap:wrap}
+nav.top ul a{color:var(--muted);text-decoration:none}
+nav.top ul a:hover{color:var(--ink)}
+
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:48px;align-items:center;padding-block:32px 72px}
+.hero h1{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:clamp(64px,12vw,150px);line-height:.86;letter-spacing:.01em;margin:0 0 24px}
+.hero h1 span{display:block}
+.hero h1 .y{color:var(--ink);background:linear-gradient(transparent 58%,var(--y) 58% 92%,transparent 92%)}
+.lede{font-size:19px;max-width:34ch;margin:0 0 28px;color:var(--ink)}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:10px;font:600 15px var(--body);padding:12px 20px;border-radius:999px;text-decoration:none;border:1.5px solid var(--ink);color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn:hover{transform:translateY(-1px)}
+.sheet{background:var(--sheet);box-shadow:0 0 0 1px var(--line),0 24px 48px -28px rgba(40,38,20,.35);border-radius:2px}
+.hero-fig{display:grid;gap:10px;justify-items:center}
+.hero-fig .sheet{width:min(100%,400px)}
+.hero-fig svg{display:block;width:100%;height:auto}
+.hero-fig rect.s{transition:fill .7s cubic-bezier(.6,0,.2,1)}
+.cap{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-height:1.5em}
+
+section{padding-block:72px;border-top:1px solid var(--line)}
+.eyebrow{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin:0 0 10px}
+h2{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:clamp(40px,6vw,64px);line-height:.92;margin:0 0 20px;text-wrap:balance}
+h3{font-family:var(--display);font-weight:600;font-size:26px;text-transform:uppercase;letter-spacing:.02em;margin:0;line-height:1}
+.intro{max-width:60ch;color:var(--muted);margin:0 0 40px}
+
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+.fact{display:grid;gap:12px;align-content:start}
+.fact p{margin:0;color:var(--muted)}
+.fact .big{font-family:var(--display);font-weight:800;font-size:56px;line-height:1;color:var(--ink)}
+.fact .big sup{font-size:.5em}
+.fact svg{width:100%;max-width:220px;height:auto}
+code{font-family:var(--mono);font-size:.88em;background:var(--y);color:#23231d;padding:1px 5px;border-radius:3px}
+
+.fam{display:grid;grid-template-columns:220px minmax(0,1fr);gap:28px;padding-block:28px;border-top:1px dashed var(--line);align-items:start}
+.fam:first-of-type{border-top:0}
+.fam .info{display:grid;gap:6px}
+.fam .info p{margin:0;color:var(--muted);font-size:14px}
+.fam .n{font-family:var(--mono);font-size:13px;color:var(--ochre)}
+.thumbs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+.thumbs figure{margin:0;display:grid;gap:6px}
+.thumbs svg{width:100%;height:auto;display:block}
+.thumbs figcaption{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+
+.originals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px}
+.originals figure{margin:0;display:grid;gap:10px}
+.originals svg{width:100%;height:auto;display:block}
+.originals figcaption{display:flex;justify-content:space-between;font-size:14px}
+.originals figcaption span{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+.spec{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border:1px solid var(--line)}
+.spec div{padding:20px;border-right:1px solid var(--line);display:grid;gap:6px}
+.spec div:last-child{border-right:0}
+.spec dt{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.spec dd{margin:0;font-weight:600;font-size:18px}
+.sw{display:inline-block;width:14px;height:14px;border-radius:7px;vertical-align:-2px;margin-right:6px;box-shadow:0 0 0 1px var(--line)}
+
+.contact{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:end}
+.contact p{margin:0 0 20px;max-width:44ch;color:var(--muted)}
+.todo{font-family:var(--mono);font-size:14px;border:1.5px dashed var(--ochre);color:var(--ochre);padding:14px 16px;border-radius:6px}
+footer{padding-block:28px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+@media (max-width:860px){
+  .hero,.contact{grid-template-columns:minmax(0,1fr)}
+  .facts{grid-template-columns:minmax(0,1fr)}
+  .fam{grid-template-columns:minmax(0,1fr)}
+  .thumbs{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .originals{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .spec{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .spec div{border-bottom:1px solid var(--line)}
+}
+@media (prefers-reduced-motion:reduce){.hero-fig rect.s{transition:none}.btn:hover{transform:none}}
+</style>
+</head>
+<body>
+
+<div class="in">
+  <nav class="top">
+    <a class="mark" href="#top" id="top"><i></i><i></i>Alternances</a>
+    <ul>
+      <li><a href="#principe">Principe</a></li>
+      <li><a href="#familles">Familles</a></li>
+      <li><a href="#originaux">Originaux</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <div class="hero">
+    <div>
+      <h1><span>Jaune</span><span class="y">ou gris,</span><span>pilule par pilule</span></h1>
+      <p class="lede">Une série de panneaux en deux teintes douces. Onze colonnes de pilules décalées, et une seule question à chaque segment.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://claude.ai/artifact/PvwxXa2rRFAqg3RLVMdF2h" target="_blank" rel="noopener">Parcourir les 247 motifs ↗</a>
+        <a class="btn" href="#contact">Commander un panneau</a>
+      </div>
+    </div>
+    <div class="hero-fig">
+      <div class="sheet" id="heroSheet"></div>
+      <div class="cap" id="heroCap" aria-live="polite"></div>
+    </div>
+  </div>
+</div>
+
+<section id="principe"><div class="in">
+  <p class="eyebrow">Principe</p>
+  <h2>Une grille, deux couleurs, une règle</h2>
+  <p class="intro">Tous les panneaux partagent la même trame. Seule la répartition des teintes change, et elle suit toujours un rythme qu'on peut écrire.</p>
+  <div class="facts">
+    <div class="fact">
+      <div id="factGrid"></div>
+      <h3>La trame</h3>
+      <p>11 colonnes. Une sur deux est décalée d'une demi-pilule, ce qui coupe net les pilules du haut et du bas. 60 segments par panneau.</p>
+    </div>
+    <div class="fact">
+      <div class="big">k/p · ↓a · →b</div>
+      <h3>La règle</h3>
+      <p>Sur un cycle de <code>p</code> segments, <code>k</code> sont jaunes. Le cycle avance de <code>a</code> en descendant et se décale de <code>b</code> d'une colonne à l'autre.</p>
+    </div>
+    <div class="fact">
+      <div class="big">2<sup>60</sup> → 247</div>
+      <h3>Le tri</h3>
+      <p>Il existe 1,15 milliard de milliards de coloriages. En gardant les rythmes réguliers, sans doublon ni simple inversion des teintes, il en reste 247.</p>
+    </div>
+  </div>
+</div></section>
+
+<section id="familles"><div class="in">
+  <p class="eyebrow">Familles</p>
+  <h2>Quatre façons d'alterner</h2>
+  <p class="intro">Du rythme le plus strict aux compositions libres. Un extrait de chaque famille ci-dessous ; la série complète est dans la galerie.</p>
+  <div id="fams"></div>
+</div></section>
+
+<section id="originaux"><div class="in">
+  <p class="eyebrow">Frame 58</p>
+  <h2>Les originaux</h2>
+  <p class="intro">Les quatre planches de départ. Toutes appartiennent au rythme 1 sur 2 ; la page 4 est la page 3 avec les teintes inversées.</p>
+  <div class="originals" id="orig"></div>
+</div></section>
+
+<section id="format"><div class="in">
+  <p class="eyebrow">Format</p>
+  <h2>Fiche technique</h2>
+  <dl class="spec">
+    <div><dt>Support</dt><dd>A4 vertical, 210 × 297 mm</dd></div>
+    <div><dt>Fichier</dt><dd>PDF vectoriel</dd></div>
+    <div><dt>Jaune</dt><dd><span class="sw" style="background:var(--y)"></span>#F1ECCB</dd></div>
+    <div><dt>Gris</dt><dd><span class="sw" style="background:var(--g)"></span>#E7E7E7</dd></div>
+  </dl>
+</div></section>
+
+<section id="contact"><div class="in contact">
+  <div>
+    <p class="eyebrow">Contact</p>
+    <h2>Un rythme vous plaît&nbsp;?</h2>
+    <p>Notez son code, affiché sous chaque motif dans la galerie, et écrivez-moi pour une impression ou une déclinaison dans d'autres teintes.</p>
+  </div>
+  <div class="todo">À compléter : adresse e-mail ou lien de contact</div>
+</div></section>
+
+<div class="in"><footer><span>Alternances · série jaune / gris</span><span>Grille Frame 58 · 11 colonnes · 60 segments</span></footer></div>
+
+<script>
+const PW=595,PH=842,W=38,X0=36,DX=(559-36)/10,T=166,L=156,TOP=8;
+const SEGS=[];
+for(let c=0;c<11;c++){const n=c%2===0?5:6,off=c%2===0?TOP:TOP-T/2;for(let j=0;j<n;j++)SEGS.push({c,j,x:X0+c*DX-W/2,y:off+j*T})}
+const Y='var(--y)',G='var(--g)';
+const mk=fn=>SEGS.map(s=>fn(s.c,s.j)?0:1);
+const f2=c=>Math.floor(c/2),f2b=c=>Math.floor((c+1)/2),m=c=>Math.abs(c-5);
+const R=(k,p,a,b,X=c=>c,row=j=>j)=>mk((c,j)=>((a*row(j)+b*X(c))%p)<k);
+function svg(g,cls){
+  let r='';g.forEach((v,i)=>{const s=SEGS[i];r+=`<rect class="${cls||''}" data-i="${i}" x="${s.x.toFixed(1)}" y="${s.y.toFixed(1)}" width="${W}" height="${L}" rx="${W/2}" style="fill:${v?G:Y}"/>`});
+  return `<svg viewBox="0 0 ${PW} ${PH}" aria-hidden="true">${r}</svg>`;
+}
+const sheet=(g,cls)=>`<div class="sheet">${svg(g,cls)}</div>`;
+
+// Hero
+const HERO=[
+  ['1/2 ↓1 →1 · col c÷2',R(1,2,1,1,f2)],
+  ['1/3 ↓1 →1',R(1,3,1,1)],
+  ['1/2 ↓1 →1 · col |c−5|',R(1,2,1,1,m)],
+  ['2/4 ↓1 →1',R(2,4,1,1)],
+  ['2/3 ↓1 →2',R(2,3,1,2)],
+  ['1/2 ↓1 →1',R(1,2,1,1)],
+  ['1/4 ↓1 →2 · col c÷2',R(1,4,1,2,f2)],
+  ['1/3 ↓2 →1 · col |c−5|',R(1,3,2,1,m)],
+];
+document.getElementById('heroSheet').innerHTML=svg(HERO[0][1],'s');
+const cap=document.getElementById('heroCap');cap.textContent=HERO[0][0];
+const rects=[...document.querySelectorAll('#heroSheet rect')];
+rects.forEach(r=>{const s=SEGS[+r.dataset.i];r.style.transitionDelay=(s.c*45+s.j*25)+'ms'});
+let hi=0;
+if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+  setInterval(()=>{hi=(hi+1)%HERO.length;const g=HERO[hi][1];rects.forEach(r=>r.style.fill=g[+r.dataset.i]?G:Y);cap.textContent=HERO[hi][0]},3200);
+}
+
+// Trame (schéma)
+document.getElementById('factGrid').innerHTML=`<div style="max-width:150px">${sheet(mk((c,j)=>c%2===1&&(j===0||j===5)))}</div>`;
+
+// Familles
+const FAMS=[
+  ['Rythme 1 sur 2','11 motifs','Alternance stricte : chaque pilule change de teinte avec sa voisine.',[
+    ['1/2 ↓1 →0',R(1,2,1,0)],['1/2 ↓1 →1',R(1,2,1,1)],['col c÷2',R(1,2,1,1,f2)],['col |c−5|',R(1,2,1,1,m)],['↓0 →1',R(1,2,0,1)],['par 2',R(1,2,1,1,c=>c,j=>Math.floor(j/2))]]],
+  ['Rythme sur 3','64 motifs','Un ou deux jaunes par cycle de trois. Les diagonales apparaissent.',[
+    ['1/3 ↓1 →1',R(1,3,1,1)],['1/3 ↓1 →2',R(1,3,1,2)],['2/3 ↓1 →1',R(2,3,1,1)],['2/3 ↓2 →1',R(2,3,2,1)],['1/3 col |c−5|',R(1,3,1,1,m)],['1/3 col c÷2',R(1,3,1,1,f2)]]],
+  ['Rythme sur 4','164 motifs','Cycles plus longs : bandes, escaliers et chevrons.',[
+    ['1/4 ↓1 →1',R(1,4,1,1)],['2/4 ↓1 →1',R(2,4,1,1)],['3/4 ↓1 →2',R(3,4,1,2)],['1/4 ↓1 →3',R(1,4,1,3)],['2/4 col |c−5|',R(2,4,1,1,m)],['1/4 col c÷2',R(1,4,1,2,f2)]]],
+  ['Compositions libres','8 motifs','Hors rythme régulier : dégradés, symétries, accents.',[
+    ['dégradé →',mk((c,j)=>((j*5+c*3)%7)/7<1-c/10)],['dégradé ↓',mk((c,j)=>((c*5+j*3)%7)/7<1-j/5)],['losange',mk((c,j)=>m(c)+Math.abs(j-(c%2?2.5:2))<3.5)],['bande centrale',mk(c=>m(c)<2)],['colonne accent',mk((c,j)=>c===5&&j%2===0)],['moitiés croisées',mk((c,j)=>(c%2===0)===(j<(c%2?3:2.5)))]]],
+];
+document.getElementById('fams').innerHTML=FAMS.map(([t,n,d,list])=>`<div class="fam"><div class="info"><h3>${t}</h3><span class="n">${n}</span><p>${d}</p></div><div class="thumbs">${list.map(([l,g])=>`<figure>${sheet(g)}<figcaption>${l}</figcaption></figure>`).join('')}</div></div>`).join('');
+
+// Originaux
+const p3=R(1,2,1,1);
+const ORIG=[['Page 1','col c÷2',R(1,2,1,1,f2)],['Page 2','col (c+1)÷2',mk((c,j)=>(j+f2b(c)+1)%2===0)],['Page 3','col c',p3],['Page 4','p.3 inversée',p3.map(v=>1-v)]];
+document.getElementById('orig').innerHTML=ORIG.map(([t,s,g])=>`<figure>${sheet(g)}<figcaption>${t}<span>${s}</span></figcaption></figure>`).join('');
+</script>
+
+</body>
+</html>
