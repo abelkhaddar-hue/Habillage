@@ -89,7 +89,14 @@ code{font-family:var(--mono);font-size:.88em;background:var(--y);color:#23231d;p
 
 .contact{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:end}
 .contact p{margin:0 0 20px;max-width:44ch;color:var(--muted)}
-.todo{font-family:var(--mono);font-size:14px;border:1.5px dashed var(--ochre);color:var(--ochre);padding:14px 16px;border-radius:6px}
+.reach{display:grid;border-top:1.5px solid var(--ink)}
+.reach .line{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:12px;align-items:center;padding-block:16px;border-bottom:1px solid var(--line)}
+.reach .lbl{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.reach .val{font-weight:600;font-size:clamp(16px,2.2vw,20px);color:var(--ink);text-decoration:none;overflow-wrap:anywhere;user-select:all}
+.reach .val:hover{text-decoration:underline;text-decoration-color:var(--y);text-decoration-thickness:4px;text-underline-offset:2px}
+.copy{font:500 13px var(--body);color:var(--ink);background:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer}
+.copy:hover{border-color:var(--ink)}
+@media (max-width:480px){.reach .line{grid-template-columns:minmax(0,1fr) auto}.reach .lbl{grid-column:1/-1}}
 footer{padding-block:28px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 
 @media (max-width:860px){
@@ -187,7 +194,10 @@ footer{padding-block:28px;border-top:1px solid var(--line);font-size:13px;color:
     <h2>Un rythme vous plaît&nbsp;?</h2>
     <p>Notez son code, affiché sous chaque motif dans la galerie, et écrivez-moi pour une impression ou une déclinaison dans d'autres teintes.</p>
   </div>
-  <div class="todo">À compléter : adresse e-mail ou lien de contact</div>
+  <div class="reach">
+    <div class="line"><span class="lbl">E-mail</span><a class="val" href="mailto:abdelhak.network@gmail.com">abdelhak.network@gmail.com</a><button type="button" class="copy" data-v="abdelhak.network@gmail.com">Copier</button></div>
+    <div class="line"><span class="lbl">Téléphone</span><a class="val" href="tel:+212670466538">+212 6 70 46 65 38</a><button type="button" class="copy" data-v="+212670466538">Copier</button></div>
+  </div>
 </div></section>
 
 <div class="in"><footer><span>Alternances · série jaune / gris</span><span>Grille Frame 58 · 11 colonnes · 60 segments</span></footer></div>
@@ -226,6 +236,11 @@ document.getElementById('fams').innerHTML=FAMS.map(([t,n,d,list])=>`<div class="
 const p3=R(1,2,1,1);
 const ORIG=[['Page 1','col c÷2',R(1,2,1,1,f2)],['Page 2','col (c+1)÷2',mk((c,j)=>(j+f2b(c)+1)%2===0)],['Page 3','col c',p3],['Page 4','p.3 inversée',p3.map(v=>1-v)]];
 document.getElementById('orig').innerHTML=ORIG.map(([t,s,g])=>`<figure>${sheet(g)}<figcaption>${t}<span>${s}</span></figcaption></figure>`).join('');
+document.querySelectorAll('.copy').forEach(b=>b.addEventListener('click',async()=>{
+  try{await navigator.clipboard.writeText(b.dataset.v);b.textContent='Copié'}
+  catch(_){const r=document.createRange();r.selectNodeContents(b.previousElementSibling);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);b.textContent='Sélectionné'}
+  setTimeout(()=>b.textContent='Copier',1600);
+}));
 </script>
 
 </body>
