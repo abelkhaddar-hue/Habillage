@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Alternances Simulateur</title>
+<script>if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('embed')</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
 <style>
@@ -97,6 +98,12 @@ th{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);tex
 .card span{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
 footer.site{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 @media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)}.panel{position:static;max-height:none}}
+/* Mode intégré (iframe sur l'accueil) : sans menu ni en-tête, hauteurs fixes pour éviter une boucle avec la hauteur de l'iframe */
+.embed body{padding:2px 0}
+.embed nav.top,.embed header,.embed footer.site{display:none}
+.embed .panel{position:static;max-height:none}
+.embed #preview svg{max-height:640px}
+.embed .lib{max-height:560px;overflow:auto;padding:4px}
 </style>
 </head>
 <body>
@@ -223,6 +230,10 @@ footer.site{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);fo
 
 <script>
 const $=id=>document.getElementById(id);
+if(document.documentElement.classList.contains('embed')&&parent!==window){
+  const send=()=>parent.postMessage({altSimHeight:Math.ceil(document.body.getBoundingClientRect().height)},'*');
+  new ResizeObserver(send).observe(document.body); addEventListener('load',send);
+}
 const r1=n=>Math.round(n*10)/10;
 const DEF={wallW:300,wallH:250,mX:0,mY:0,pw:10,pl:42,gx:4,gy:2.5,justify:false,cols:0,colFit:'gap',shift:50,align:'top',minCut:4,
   cA:'#f1eccb',cB:'#e7e7e7',cWall:'#ffffff',sheen:true,pmax:'4',expMode:'fill',expWall:true};
