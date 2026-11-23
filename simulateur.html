@@ -43,6 +43,7 @@ label.f{display:grid;gap:3px;font-size:12.5px;color:var(--muted)}
 .inp input{all:unset;width:100%;min-width:0;padding:7px 8px;font:500 14px var(--body);color:var(--fg);font-variant-numeric:tabular-nums}
 .inp span{font-family:var(--mono);font-size:11px;color:var(--muted);padding-right:8px}
 .inp:focus-within{border-color:var(--accent)}
+.inp input:disabled{opacity:.55}
 input[type=range]{width:100%;accent-color:var(--accent)}
 label.chk{display:flex;gap:8px;align-items:center;font-size:13px}
 select{font:500 13px var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 8px;width:100%}
@@ -147,6 +148,11 @@ footer.site{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);fo
         <label class="f">Espace entre colonnes<span class="inp"><input type="number" data-k="gx" min="0" step="0.1"><span>cm</span></span></label>
         <label class="f">Espace entre pièces<span class="inp"><input type="number" data-k="gy" min="0" step="0.1"><span>cm</span></span></label>
       </div>
+      <label class="chk"><input type="checkbox" data-k="plAuto"> Longueur des pièces automatique (d'après la hauteur du mur)</label>
+      <div class="row" id="rowsWrap">
+        <label class="f">Pièces par colonne<span class="inp"><input type="number" data-k="rows" min="0" step="1" placeholder="auto"><span>pce</span></span></label>
+        <p class="note" id="plOut" style="align-self:end"></p>
+      </div>
       <div class="row">
         <label class="f">Nombre de colonnes<span class="inp"><input type="number" data-k="cols" min="0" step="1" placeholder="auto"><span>col.</span></span></label>
         <label class="f" id="colFitWrap">En ajustant
@@ -156,7 +162,7 @@ footer.site{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);fo
       <p class="note">Laissez vide (ou 0) pour un calcul automatique d'après la largeur et l'espace.</p>
       <label class="chk" id="justifyWrap"><input type="checkbox" data-k="justify"> Répartir les colonnes sur toute la largeur</label>
       <label class="f">Décalage une colonne sur deux : <b id="shiftOut"></b><input type="range" data-k="shift" min="0" max="100" step="5"></label>
-      <label class="f">Départ vertical
+      <label class="f" id="alignWrap">Départ vertical
         <select data-k="align"><option value="top">Pièce entière en haut</option><option value="center">Centré (coupes symétriques)</option></select>
       </label>
       <label class="f">Coupe minimale (en dessous, la pièce est retirée)<span class="inp"><input type="number" data-k="minCut" min="0" step="0.5"><span>cm</span></span></label>
@@ -235,7 +241,7 @@ if(document.documentElement.classList.contains('embed')&&parent!==window){
   new ResizeObserver(send).observe(document.body); addEventListener('load',send);
 }
 const r1=n=>Math.round(n*10)/10;
-const DEF={wallW:300,wallH:250,mX:0,mY:0,pw:10,pl:42,gx:4,gy:2.5,justify:false,cols:0,colFit:'gap',shift:50,align:'top',minCut:4,
+const DEF={wallW:300,wallH:250,mX:0,mY:0,pw:10,pl:42,gx:4,gy:2.5,justify:false,plAuto:true,rows:0,cols:0,colFit:'gap',shift:50,align:'top',minCut:4,
   cA:'#f1eccb',cB:'#e7e7e7',cWall:'#ffffff',sheen:true,pmax:'4',expMode:'fill',expWall:true};
 let P={...DEF};
 try{Object.assign(P,JSON.parse(localStorage.getItem('alt-sim-cm')||'{}'))}catch(_){}
@@ -263,11 +269,17 @@ function layout(){
     C=Math.max(1,Math.floor((zw+gx)/(pw+gx)));
     if(P.justify&&C>1) gx=(zw-C*pw)/(C-1);
   }
-  const pl=Math.max(pw,+P.pl);
+  let pl=Math.max(pw,+P.pl), nRows=0;
+  if(P.plAuto){                     // longueur calculée pour remplir exactement la hauteur
+    nRows=Math.floor(+P.rows)||Math.max(1,Math.round((zh+gy)/(Math.max(pw,+P.pl)+gy)));
+    nRows=Math.min(200,nRows);
+    pl=(zh-(nRows-1)*gy)/nRows;
+    if(pl<pw){pl=pw;warn+=(warn?' ':'')+`Trop de pièces par colonne : elles seraient plus courtes que leur largeur (${r1(pw)} cm).`}
+  }
   const used=C*pw+(C-1)*gx, x0=zx+(zw-used)/2;
   const T=pl+gy, sh=(+P.shift/100)*T;
   let base=zy;
-  if(P.align==='center') base=zy+zh/2-pl/2;
+  if(P.align==='center'&&!P.plAuto) base=zy+zh/2-pl/2;
   const segs=[]; let R=0;
   for(let c=0;c<C;c++){
     let s=base-(c%2?sh:0);
@@ -282,7 +294,7 @@ function layout(){
       segs.push({c,j,x,y,yt,yb,vis,cut:vis<pl-.05,nx:C>1?c/(C-1):.5,ny:Math.min(1,Math.max(0,((yt+yb)/2-zy)/zh))});
     }
   }
-  L={W,H,zx,zy,zw,zh,pw,pl,gx,gy,C,R,T,x0,used,segs,warn,fixed:nC>=1};
+  L={W,H,zx,zy,zw,zh,pw,pl,gx,gy,C,R,T,x0,used,segs,warn,fixed:nC>=1,nRows};
 }
 
 // Contour d'une pièce (pilule) coupée entre yt et yb, en arcs exacts
@@ -407,6 +419,10 @@ function drawCalc(){
   $('calc').innerHTML=`<b>${L.C}</b> colonnes · <b>${L.segs.length}</b> pièces · reste <b>${r1(lost)} cm</b> en largeur (${r1(lost/2)} cm de chaque côté)`;
   if(L.fixed)$('calc').innerHTML=`<b>${L.C}</b> colonnes · <b>${L.segs.length}</b> pièces`+` · pièces de <b>${r1(L.pw)} cm</b>, espace <b>${r1(L.gx)} cm</b>`;
   if(L.warn)$('calc').innerHTML+=`<br><span class="warn">${L.warn}</span>`;
+  $('rowsWrap').hidden=!P.plAuto; document.querySelector('[data-k=pl]').disabled=!!P.plAuto;
+  $('alignWrap').hidden=!!P.plAuto;
+  { const e=document.querySelector('[data-k=pl]'); e.value=P.plAuto?r1(L.pl):P.pl; }
+  if(P.plAuto)$('plOut').innerHTML=`Longueur calculée : <b>${r1(L.pl)} cm</b>`;
   $('colFitWrap').hidden=!L.fixed; $('justifyWrap').hidden=L.fixed;
   $('shiftOut').textContent=`${P.shift} %`;
 }
@@ -453,12 +469,12 @@ function update(){
 
 // ---------- Formulaire ----------
 const inputs=[...document.querySelectorAll('[data-k]')];
-function fill(){for(const el of inputs){const k=el.dataset.k;el.type==='checkbox'?el.checked=!!P[k]:el.value=(k==='cols'&&!+P[k])?'':P[k]}}
+function fill(){for(const el of inputs){const k=el.dataset.k;el.type==='checkbox'?el.checked=!!P[k]:el.value=((k==='cols'||k==='rows')&&!+P[k])?'':P[k]}}
 let tmr;
 for(const el of inputs){
   el.addEventListener('input',()=>{
     const k=el.dataset.k;
-    P[k]=el.type==='checkbox'?el.checked:(el.type==='number'||el.type==='range')?(el.value===''?(k==='cols'?0:P[k]):+el.value):el.value;
+    P[k]=el.type==='checkbox'?el.checked:(el.type==='number'||el.type==='range')?(el.value===''?((k==='cols'||k==='rows')?0:P[k]):+el.value):el.value;
     if(k==='expMode'||k==='expWall'){save();return}
     clearTimeout(tmr); tmr=setTimeout(update,120);
   });
