@@ -85,6 +85,17 @@ table{border-collapse:collapse;width:100%;margin-top:8px;font-variant-numeric:ta
 th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
 th{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);text-transform:uppercase}
 .sw{display:inline-block;width:12px;height:12px;border-radius:6px;vertical-align:-1px;margin-right:6px;box-shadow:0 0 0 1px var(--line)}
+.favs{display:grid;gap:10px;border-top:1px solid var(--line);padding-top:14px}
+.favs h3{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:20px;margin:0;line-height:1}
+.favadd{display:flex;gap:8px;flex-wrap:wrap}
+.favadd .inp{flex:1 1 220px}
+.favlist{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.favlist li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:6px}
+.favlist li.on{border-color:var(--accent)}
+.favlist .nm{font-weight:600;overflow-wrap:anywhere}
+.favlist .dt{grid-column:1;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.favlist .act{grid-row:1/3;grid-column:2;display:flex;gap:6px}
+.favlist .empty{color:var(--muted);font-size:13px;border-style:dashed}
 
 .libhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:end}
 .libhead h2{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:28px;margin:0;line-height:1}
@@ -219,6 +230,14 @@ footer.site{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);fo
         <summary>Liste de débit (pièces par longueur et finition)</summary>
         <table id="bom"></table>
       </details>
+      <div class="favs">
+        <h3>Favoris</h3>
+        <div class="favadd">
+          <span class="inp"><input type="text" id="favName" maxlength="60" placeholder="Nom du calcul (ex : Salon, client Dupont)"></span>
+          <button type="button" class="b primary" id="bFav">☆ Enregistrer en favori</button>
+        </div>
+        <ul class="favlist" id="favList"></ul>
+      </div>
     </section>
 
     <section>
@@ -495,6 +514,35 @@ $('bCopy').onclick=async e=>{
   try{await navigator.clipboard.writeText(buildSVG('export'));btn.textContent='SVG copié'}catch(_){btn.textContent='Copie refusée'}
   setTimeout(()=>btn.textContent='Copier le SVG',1600);
 };
+// ---------- Favoris (enregistrés dans ce navigateur) ----------
+const FKEY='alt-sim-favoris';
+let favs=[], favOn=null;
+try{favs=JSON.parse(localStorage.getItem(FKEY)||'[]')}catch(_){favs=[]}
+const saveFavs=()=>{try{localStorage.setItem(FKEY,JSON.stringify(favs));return true}catch(_){return false}};
+const nf=n=>String(r1(n)).replace('.',',');
+function favSummary(){const it=curItem();return `${nf(L.W)} × ${nf(L.H)} cm · ${L.C} col. · pièces ${nf(L.pw)} × ${nf(L.pl)} cm · ${it?it.id:'motif'}${invert?' inversé':''}${flips.size?' + '+flips.size+' retouche(s)':''}`}
+function drawFavs(){
+  const ul=$('favList');
+  if(!favs.length){ul.innerHTML='<li class="empty">Aucun favori pour l\'instant. Donnez un nom au calcul et enregistrez-le pour le retrouver plus tard.</li>';return}
+  ul.innerHTML=favs.map((f,i)=>`<li class="${f.id===favOn?'on':''}"><span class="nm"></span><span class="dt"></span><span class="act"><button type="button" class="b" data-load="${i}">Charger</button><button type="button" class="b" data-del="${i}" aria-label="Supprimer">Supprimer</button></span></li>`).join('');
+  ul.querySelectorAll('li').forEach((li,i)=>{li.querySelector('.nm').textContent=favs[i].name;li.querySelector('.dt').textContent=favs[i].summary+' · '+new Date(favs[i].date).toLocaleDateString('fr-FR')});
+  ul.querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>loadFav(favs[+b.dataset.load]));
+  ul.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const f=favs[+b.dataset.del];if(!confirm(`Supprimer le favori « ${f.name} » ?`))return;favs.splice(+b.dataset.del,1);saveFavs();drawFavs()});
+}
+function loadFav(f){
+  P={...DEF,...f.P}; curKey=f.key; invert=!!f.invert; flips=new Set(f.flips||[]); if(f.seed)seed=f.seed; favOn=f.id;
+  fill(); update(); drawFavs(); $('preview').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+$('bFav').onclick=()=>{
+  const inp=$('favName'), name=inp.value.trim()||`Calcul du ${new Date().toLocaleDateString('fr-FR')}`;
+  const f={id:Date.now().toString(36),name,date:Date.now(),P:{...P},key:curKey,invert,flips:[...flips],seed,summary:favSummary()};
+  favs.unshift(f); favOn=f.id;
+  const btn=$('bFav'); btn.textContent=saveFavs()?'★ Enregistré':'Enregistrement impossible';
+  setTimeout(()=>btn.textContent='☆ Enregistrer en favori',1600);
+  inp.value=''; drawFavs();
+};
+$('favName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('bFav').click()}});
+drawFavs();
 fill(); update();
 </script>
 </body>
