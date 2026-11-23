@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Alternances Simulateur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+/* Layout : réglages à gauche (collants), aperçu du mur à droite, puis toutes les alternances en vignettes */
+:root{
+  --bg:#fbfbf7; --fg:#23231d; --muted:#6d6c60; --line:#e2e1d6; --surface:#ffffff;
+  --accent:#7d6c12; --y:#f1eccb; --g:#e7e7e7;
+  --display:"Big Shoulders Display","Arial Narrow",sans-serif; --body:"Instrument Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#191916; --fg:#efeee6; --muted:#a3a194; --line:#34332c; --surface:#22221e; --accent:#e2d07a; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#191916; --fg:#efeee6; --muted:#a3a194; --line:#34332c; --surface:#22221e; --accent:#e2d07a; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 60px}
+.site{max-width:1400px;margin:0 auto}
+nav.top{padding-block:0 18px;margin-bottom:24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.mark{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:.06em;text-transform:uppercase;display:flex;gap:8px;align-items:center;color:var(--fg);text-decoration:none}
+.mark i{display:inline-block;width:7px;height:20px;border-radius:4px;background:var(--y)}
+.mark i+i{background:var(--g);transform:translateY(5px)}
+nav.top ul{display:flex;gap:20px;list-style:none;margin:0;padding:0;font-size:14px;flex-wrap:wrap}
+nav.top ul a{color:var(--muted);text-decoration:none}
+nav.top ul a:hover,nav.top ul a[aria-current]{color:var(--fg)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+header{max-width:1400px;margin:0 auto 24px;display:grid;gap:8px}
+h1{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:clamp(40px,6vw,64px);line-height:.92;margin:0}
+header p{margin:0;color:var(--muted);max-width:70ch}
+
+.wrap{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:320px minmax(0,1fr);gap:28px;align-items:start}
+.panel{position:sticky;top:16px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:grid;gap:18px;max-height:calc(100vh - 32px);overflow:auto}
+fieldset{border:0;margin:0;padding:0;display:grid;gap:8px}
+legend{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;padding:0}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+label.f{display:grid;gap:3px;font-size:12.5px;color:var(--muted)}
+.inp{display:flex;align-items:center;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.inp input{all:unset;width:100%;min-width:0;padding:7px 8px;font:500 14px var(--body);color:var(--fg);font-variant-numeric:tabular-nums}
+.inp span{font-family:var(--mono);font-size:11px;color:var(--muted);padding-right:8px}
+.inp:focus-within{border-color:var(--accent)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+label.chk{display:flex;gap:8px;align-items:center;font-size:13px}
+select{font:500 13px var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 8px;width:100%}
+.colors{display:flex;gap:12px;flex-wrap:wrap}
+.colors label{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.colors input{width:30px;height:24px;border:1px solid var(--line);padding:0;background:none;border-radius:4px}
+.note{font-size:12px;color:var(--muted);margin:0}
+.note b{color:var(--fg);font-weight:600}
+.warn{color:#b3261e;font-weight:500}
+[hidden]{display:none!important}
+
+.main{display:grid;gap:28px;min-width:0}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:grid;gap:14px}
+.stagehead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.stagehead h2{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:28px;margin:0;line-height:1}
+.stagehead .rule{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.view{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;gap:6px}
+.dimw,.dimh{font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dimw{grid-column:2;justify-content:center}
+.dimw::before,.dimw::after{content:"";flex:1;border-top:1px solid var(--line)}
+.dimh{grid-row:2;writing-mode:vertical-rl;transform:rotate(180deg);justify-content:center}
+.dimh::before,.dimh::after{content:"";flex:1;border-left:1px solid var(--line)}
+#preview{grid-column:2;grid-row:2;display:flex;justify-content:center}
+#preview svg{display:block;width:100%;height:auto;max-height:68vh;box-shadow:0 0 0 1px var(--line)}
+#preview path{cursor:pointer}
+#preview path:hover{opacity:.8}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+button.b{font:500 13px var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+button.b:hover{border-color:var(--accent)}
+button.b.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));border:1px solid var(--line);border-radius:6px}
+.stats div{padding:10px 12px;border-right:1px solid var(--line);display:grid;gap:2px}
+.stats div:last-child{border-right:0}
+.stats dt{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.stats dd{margin:0;font-weight:600;font-size:17px;font-variant-numeric:tabular-nums}
+details{font-size:13px}
+summary{cursor:pointer;color:var(--muted)}
+table{border-collapse:collapse;width:100%;margin-top:8px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+th{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);text-transform:uppercase}
+.sw{display:inline-block;width:12px;height:12px;border-radius:6px;vertical-align:-1px;margin-right:6px;box-shadow:0 0 0 1px var(--line)}
+
+.libhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:end}
+.libhead h2{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:28px;margin:0;line-height:1}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:500 12.5px var(--body);color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:12px;margin-top:14px}
+.card{all:unset;cursor:pointer;display:grid;gap:4px;padding:3px;border-radius:6px}
+.card canvas{display:block;width:100%;height:auto;box-shadow:0 0 0 1px var(--line);border-radius:2px}
+.card.on canvas{box-shadow:0 0 0 2px var(--accent)}
+.card:focus-visible{outline:2px solid var(--accent)}
+.card span{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+footer.site{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)}.panel{position:static;max-height:none}}
+</style>
+</head>
+<body>
+
+<nav class="top site">
+  <a class="mark" href="index.html"><i></i><i></i>Alternances</a>
+  <ul>
+    <li><a href="index.html#principe">Principe</a></li>
+    <li><a href="galerie.html">Galerie</a></li>
+    <li><a href="simulateur.html" aria-current="page">Simulateur</a></li>
+    <li><a href="index.html#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<header>
+  <h1>Simulateur de mur</h1>
+  <p>Entrez les dimensions du mur et des pièces. Le simulateur calcule le nombre de colonnes, coupe les pièces au ras du mur et applique l'alternance choisie. Pièces jaunes = miroir bronze, pièces grises = version simple teinte. Cliquez une pièce pour basculer miroir / teinte, puis exportez le résultat en SVG à l'échelle réelle (cm).</p>
+</header>
+
+<div class="wrap">
+  <form class="panel" id="form" onsubmit="return false">
+    <fieldset>
+      <legend>Mur</legend>
+      <div class="row">
+        <label class="f">Largeur<span class="inp"><input type="number" data-k="wallW" min="10" step="1"><span>cm</span></span></label>
+        <label class="f">Hauteur<span class="inp"><input type="number" data-k="wallH" min="10" step="1"><span>cm</span></span></label>
+      </div>
+      <div class="row">
+        <label class="f">Marge gauche / droite<span class="inp"><input type="number" data-k="mX" min="0" step="0.5"><span>cm</span></span></label>
+        <label class="f">Marge haut / bas<span class="inp"><input type="number" data-k="mY" min="0" step="0.5"><span>cm</span></span></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Pièces</legend>
+      <div class="row">
+        <label class="f">Largeur pièce<span class="inp"><input type="number" data-k="pw" min="1" step="0.5"><span>cm</span></span></label>
+        <label class="f">Longueur pièce<span class="inp"><input type="number" data-k="pl" min="1" step="0.5"><span>cm</span></span></label>
+      </div>
+      <div class="row">
+        <label class="f">Espace entre colonnes<span class="inp"><input type="number" data-k="gx" min="0" step="0.1"><span>cm</span></span></label>
+        <label class="f">Espace entre pièces<span class="inp"><input type="number" data-k="gy" min="0" step="0.1"><span>cm</span></span></label>
+      </div>
+      <div class="row">
+        <label class="f">Nombre de colonnes<span class="inp"><input type="number" data-k="cols" min="0" step="1" placeholder="auto"><span>col.</span></span></label>
+        <label class="f" id="colFitWrap">En ajustant
+          <select data-k="colFit"><option value="gap">l'espace entre colonnes</option><option value="width">la largeur des pièces</option></select>
+        </label>
+      </div>
+      <p class="note">Laissez vide (ou 0) pour un calcul automatique d'après la largeur et l'espace.</p>
+      <label class="chk" id="justifyWrap"><input type="checkbox" data-k="justify"> Répartir les colonnes sur toute la largeur</label>
+      <label class="f">Décalage une colonne sur deux : <b id="shiftOut"></b><input type="range" data-k="shift" min="0" max="100" step="5"></label>
+      <label class="f">Départ vertical
+        <select data-k="align"><option value="top">Pièce entière en haut</option><option value="center">Centré (coupes symétriques)</option></select>
+      </label>
+      <label class="f">Coupe minimale (en dessous, la pièce est retirée)<span class="inp"><input type="number" data-k="minCut" min="0" step="0.5"><span>cm</span></span></label>
+      <p class="note" id="calc"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Finitions</legend>
+      <div class="colors">
+        <label><input type="color" data-k="cA"> Miroir bronze</label>
+        <label><input type="color" data-k="cB"> Simple teinte</label>
+        <label><input type="color" data-k="cWall"> Mur</label>
+      </div>
+      <label class="chk"><input type="checkbox" data-k="sheen"> Reflet miroir dans l'aperçu</label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Alternances</legend>
+      <label class="f">Cycle maximum
+        <select data-k="pmax"><option value="4">Jusqu'à 4 (comme la galerie)</option><option value="5">Jusqu'à 5</option><option value="6">Jusqu'à 6</option></select>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Export SVG</legend>
+      <label class="f">Rendu
+        <select data-k="expMode"><option value="fill">Couleurs (aperçu, impression)</option><option value="cut">Contours de découpe (un calque miroir, un calque teinte)</option></select>
+      </label>
+      <label class="chk"><input type="checkbox" data-k="expWall"> Inclure le fond et le contour du mur</label>
+    </fieldset>
+    <button type="button" class="b" id="bDefaults">Valeurs par défaut</button>
+  </form>
+
+  <div class="main">
+    <section class="stage">
+      <div class="stagehead">
+        <h2 id="curTitle"></h2>
+        <span class="rule" id="curRule"></span>
+      </div>
+      <div class="view">
+        <span class="dimw" id="dimW"></span>
+        <span class="dimh" id="dimH"></span>
+        <div id="preview"></div>
+      </div>
+      <div class="btns">
+        <button type="button" class="b primary" id="bExport">Télécharger le SVG</button>
+        <button type="button" class="b" id="bCopy">Copier le SVG</button>
+        <button type="button" class="b" id="bInv">Inverser miroir ↔ teinte</button>
+        <button type="button" class="b" id="bReset">Annuler retouches</button>
+        <button type="button" class="b" id="bRand">Tirage aléatoire</button>
+      </div>
+      <dl class="stats" id="stats"></dl>
+      <details>
+        <summary>Liste de débit (pièces par longueur et finition)</summary>
+        <table id="bom"></table>
+      </details>
+    </section>
+
+    <section>
+      <div class="libhead">
+        <h2>Toutes les alternances · <span id="libCount"></span></h2>
+        <div class="chips" id="chips"></div>
+      </div>
+      <p class="note">Calculées pour ce mur : les motifs qui donnent le même résultat, ou seulement les teintes inversées, ne sont affichés qu'une fois. Notation : <b>k/p</b> = k miroirs bronze sur un cycle de p · <b>↓a</b> = pas en descendant · <b>→b</b> = décalage par colonne.</p>
+      <div class="lib" id="lib"></div>
+    </section>
+  </div>
+</div>
+
+<footer class="site"><span>Alternances · simulateur</span><span>Export SVG en centimètres, échelle 1:1</span></footer>
+
+<script>
+const $=id=>document.getElementById(id);
+const r1=n=>Math.round(n*10)/10;
+const DEF={wallW:300,wallH:250,mX:0,mY:0,pw:10,pl:42,gx:4,gy:2.5,justify:false,cols:0,colFit:'gap',shift:50,align:'top',minCut:4,
+  cA:'#f1eccb',cB:'#e7e7e7',cWall:'#ffffff',sheen:true,pmax:'4',expMode:'fill',expWall:true};
+let P={...DEF};
+try{Object.assign(P,JSON.parse(localStorage.getItem('alt-sim-cm')||'{}'))}catch(_){}
+const save=()=>{try{localStorage.setItem('alt-sim-cm',JSON.stringify(P))}catch(_){}};
+
+// ---------- Géométrie ----------
+let L={}; // layout courant
+function layout(){
+  let pw=Math.max(1,+P.pw), gx=Math.max(0,+P.gx), warn='';
+  const gy=Math.max(0,+P.gy), W=Math.max(10,+P.wallW), H=Math.max(10,+P.wallH);
+  const mX=Math.min(Math.max(0,+P.mX),W/2-pw/2), mY=Math.min(Math.max(0,+P.mY),H/2-1);
+  const zx=mX, zy=mY, zw=W-2*mX, zh=H-2*mY;
+  const nC=Math.min(400,Math.floor(+P.cols)||0);
+  let C;
+  if(nC>=1){                         // nombre de colonnes imposé
+    C=nC;
+    if(P.colFit==='width'){          // on recalcule la largeur des pièces
+      pw=(zw-(C-1)*gx)/C;
+      if(pw<1){pw=1;warn=`Trop de colonnes : avec ${r1(gx)} cm d'espace, ${C} colonnes ne tiennent pas dans ${r1(zw)} cm.`}
+    }else if(C>1){                   // on recalcule l'espace entre colonnes
+      gx=(zw-C*pw)/(C-1);
+      if(gx<0){gx=0;warn=`Trop de colonnes : ${C} pièces de ${r1(pw)} cm font ${r1(C*pw)} cm, plus que les ${r1(zw)} cm disponibles. Les pièces débordent du mur.`}
+    }
+  }else{
+    C=Math.max(1,Math.floor((zw+gx)/(pw+gx)));
+    if(P.justify&&C>1) gx=(zw-C*pw)/(C-1);
+  }
+  const pl=Math.max(pw,+P.pl);
+  const used=C*pw+(C-1)*gx, x0=zx+(zw-used)/2;
+  const T=pl+gy, sh=(+P.shift/100)*T;
+  let base=zy;
+  if(P.align==='center') base=zy+zh/2-pl/2;
+  const segs=[]; let R=0;
+  for(let c=0;c<C;c++){
+    let s=base-(c%2?sh:0);
+    s-=Math.ceil((s-zy)/T)*T;           // première pièce au-dessus ou au ras du haut
+    if(s+pl<=zy+1e-6) s+=T;
+    const x=x0+c*(pw+gx);
+    for(let j=0;;j++){
+      const y=s+j*T; if(y>=zy+zh-1e-6)break;
+      const yt=Math.max(y,zy), yb=Math.min(y+pl,zy+zh), vis=yb-yt;
+      R=Math.max(R,j+1);
+      if(vis<=0||vis<+P.minCut)continue;
+      segs.push({c,j,x,y,yt,yb,vis,cut:vis<pl-.05,nx:C>1?c/(C-1):.5,ny:Math.min(1,Math.max(0,((yt+yb)/2-zy)/zh))});
+    }
+  }
+  L={W,H,zx,zy,zw,zh,pw,pl,gx,gy,C,R,T,x0,used,segs,warn,fixed:nC>=1};
+}
+
+// Contour d'une pièce (pilule) coupée entre yt et yb, en arcs exacts
+function pill(s){
+  const {pw:w,pl}=L, r=w/2, cx=s.x+r, a=s.y+r, b=s.y+pl-r, yt=s.yt, yb=s.yb;
+  const f=n=>+n.toFixed(2);
+  const hw=v=>v<a?Math.sqrt(Math.max(0,r*r-(a-v)**2)):v>b?Math.sqrt(Math.max(0,r*r-(v-b)**2)):r;
+  const pt=(k,v)=>`${f(cx+k*hw(v))},${f(v)}`;
+  const cuts=[yt]; if(a>yt&&a<yb)cuts.push(a); if(b>yt&&b<yb&&b>a)cuts.push(b); cuts.push(yb);
+  const arc=(i)=>{const m=(cuts[i-1]+cuts[i])/2;return m<a||m>b};
+  let d=`M${pt(-1,yt)}L${pt(1,yt)}`;
+  for(let i=1;i<cuts.length;i++) d+=arc(i)?`A${f(r)},${f(r)} 0 0 1 ${pt(1,cuts[i])}`:`L${pt(1,cuts[i])}`;
+  d+=`L${pt(-1,yb)}`;
+  for(let i=cuts.length-1;i>0;i--) d+=arc(i)?`A${f(r)},${f(r)} 0 0 1 ${pt(-1,cuts[i-1])}`:`L${pt(-1,cuts[i-1])}`;
+  return d+'Z';
+}
+
+// ---------- Alternances ----------
+// Chaque générateur renvoie true = miroir bronze
+let GENS={}, LIST=[], FAMS={};
+function buildGens(){
+  const C=L.C, mid=(C-1)/2;
+  const XF={'c':c=>c,'c÷2':c=>Math.floor(c/2),'(c+1)÷2':c=>Math.floor((c+1)/2),'|c−milieu|':c=>Math.floor(Math.abs(c-mid))};
+  const RF={'j':j=>j,'j÷2':j=>Math.floor(j/2)};
+  GENS={};
+  const pmax=+P.pmax;
+  for(let p=2;p<=pmax;p++) for(let k=1;k<p;k++) for(const [rn,rf] of Object.entries(RF))
+    for(let a=0;a<p;a++) for(let b=0;b<p;b++) for(const [xn,xf] of Object.entries(XF)){
+      if(rn==='j÷2'&&a===0)continue;
+      const key=`${k}/${p} · ↓${a}${rn==='j'?'':' (par 2)'} · →${b} · col ${xn}`;
+      GENS[key]={fam:'p'+p,fn:s=>((a*rf(s.j)+b*xf(s.c))%p)<k};
+    }
+  const lib=(key,fn)=>GENS[key]={fam:'libre',fn};
+  lib('dégradé gauche → droite',s=>((s.j*5+s.c*3)%7)/7<1-s.nx);
+  lib('dégradé haut → bas',s=>((s.c*5+s.j*3)%7)/7<1-s.ny);
+  lib('losange central',s=>Math.abs(s.nx-.5)+Math.abs(s.ny-.5)<.42);
+  lib('cercle central',s=>Math.hypot((s.nx-.5)*L.zw,(s.ny-.5)*L.zh)<Math.min(L.zw,L.zh)*.3);
+  lib('bande centrale',s=>Math.abs(s.nx-.5)<.18);
+  lib('bandes horizontales',s=>Math.floor(s.ny*4)%2===0);
+  lib('colonne accent',s=>s.c===Math.round(mid)&&s.j%2===0);
+  lib('bords alternés, centre B',s=>(s.c<=1||s.c>=C-2)&&s.j%2===0);
+  lib('moitiés croisées',s=>(s.c%2===0)===(s.ny<.5));
+  lib('diagonale',s=>s.ny<s.nx);
+  lib('chevron',s=>((s.j+Math.floor(Math.abs(s.c-mid)/2))%2)===0);
+  lib('aléatoire',s=>rand(s)<.5);
+
+  // dédoublonnage pour ce mur
+  const seen=new Set(); LIST=[]; FAMS={};
+  for(const [key,g] of Object.entries(GENS)){
+    const grid=L.segs.map(s=>g.fn(s)?0:1);
+    if(key!=='aléatoire'){
+      if(grid.every(v=>v===grid[0]))continue;
+      const a=grid.join(''),b=grid.map(v=>1-v).join(''),cn=a<b?a:b;
+      if(seen.has(cn))continue; seen.add(cn);
+    }
+    (FAMS[g.fam]=FAMS[g.fam]||[]).push(key);
+  }
+  for(const fam of Object.keys(FAMS)) FAMS[fam].forEach((key,i)=>LIST.push({key,fam,id:(fam==='libre'?'L':'P'+fam.slice(1))+'-'+String(i+1).padStart(2,'0')}));
+}
+let seed=Math.floor(Math.random()*1e9);
+function rand(s){let h=(seed^(s.c*73856093)^(s.j*19349663))>>>0;h=Math.imul(h^(h>>>16),2246822507)>>>0;h=Math.imul(h^(h>>>13),3266489909)>>>0;return ((h^(h>>>16))>>>0)/4294967296}
+
+// ---------- État du motif ----------
+let curKey=null, invert=false, flips=new Set();
+const tone=s=>{let a=GENS[curKey]?.fn(s);if(invert)a=!a;if(flips.has(s.c+','+s.j))a=!a;return a}; // true = miroir bronze
+
+// ---------- SVG ----------
+function buildSVG(mode){
+  const {W,H,zx,zy,zw,zh}=L, f=n=>+n.toFixed(2);
+  const A=[],B=[];
+  L.segs.forEach((s,i)=>(tone(s)?A:B).push({s,i}));
+  if(mode==='preview'){
+    const p=arr=>arr.map(({s,i})=>`<path data-i="${i}" d="${pill(s)}"><title>Colonne ${s.c+1}, pièce ${s.j+1} · ${r1(s.vis)} cm${s.cut?' (coupée)':''}</title></path>`).join('');
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${f(W)} ${f(H)}" role="img" aria-label="Aperçu du mur"><rect width="${f(W)}" height="${f(H)}" fill="${P.cWall}"/>${(zx||zy)?`<rect x="${f(zx)}" y="${f(zy)}" width="${f(zw)}" height="${f(zh)}" fill="none" stroke="#000" stroke-opacity=".12" stroke-dasharray="1.2 1" stroke-width="0.2"/>`:''}<g fill="${P.cA}">${p(A)}</g><g fill="${P.cB}">${p(B)}</g></svg>`.replace(`<g fill="${P.cA}">`,P.sheen?`<defs><linearGradient id="mir" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${f(W)}" y2="${f(H)}">${[[0,-.25],[.18,.35],[.3,-.1],[.5,.15],[.62,.5],[.7,0],[.88,-.3],[1,.2]].map(([o,t])=>`<stop offset="${o}" stop-color="${shade(P.cA,t)}"/>`).join('')}</linearGradient></defs><g fill="url(#mir)">`:`<g fill="${P.cA}">`);
+  }
+  const cut=P.expMode==='cut';
+  const layer=(id,label,color,arr)=>`  <g id="${id}" inkscape:groupmode="layer" inkscape:label="${label}" ${cut?`fill="none" stroke="${color}" stroke-width="0.05"`:`fill="${color}"`}>\n${arr.map(({s})=>`    <path d="${pill(s)}"/>`).join('\n')}\n  </g>`;
+  const meta=`Mur ${f(W)} x ${f(H)} cm · pièces ${L.pw} x ${L.pl} cm · espaces ${f(L.gx)} / ${L.gy} cm · ${curTitle()}`;
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="${f(W)}cm" height="${f(H)}cm" viewBox="0 0 ${f(W)} ${f(H)}">
+  <title>${esc(meta)}</title>
+${P.expWall?`  <g id="mur" inkscape:groupmode="layer" inkscape:label="Mur">\n    <rect width="${f(W)}" height="${f(H)}" fill="${cut?'none':P.cWall}" stroke="#000" stroke-width="0.05"/>\n  </g>\n`:''}${layer('miroir-bronze','Miroir bronze '+P.cA,P.cA,A)}
+${layer('simple-teinte','Simple teinte '+P.cB,P.cB,B)}
+</svg>
+`;
+}
+// éclaircit (t>0, vers le blanc) ou assombrit (t<0, vers le noir) une couleur hex
+function shade(hex,t){const n=parseInt(hex.slice(1),16),c=[n>>16,n>>8&255,n&255].map(v=>Math.round(t>0?v+(255-v)*t:v*(1+t)));return '#'+c.map(v=>v.toString(16).padStart(2,'0')).join('')}
+const esc=t=>t.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const curItem=()=>LIST.find(x=>x.key===curKey);
+const curTitle=()=>{const it=curItem();return (it?it.id+' · ':'')+curKey+(invert?' · inversé':'')+(flips.size?` · ${flips.size} retouche(s)`:'')};
+
+// ---------- Rendu ----------
+function drawPreview(){
+  const box=$('preview'); box.innerHTML=buildSVG('preview');
+  box.querySelector('svg').addEventListener('click',e=>{
+    const p=e.target.closest('path[data-i]'); if(!p)return;
+    const s=L.segs[+p.dataset.i], k=s.c+','+s.j;
+    flips.has(k)?flips.delete(k):flips.add(k);
+    drawPreview(); drawStats();
+  });
+  const it=curItem();
+  $('curTitle').textContent=it?it.id:'Motif';
+  $('curRule').textContent=curKey+(invert?' · inversé':'')+(flips.size?` · ${flips.size} retouche(s)`:'');
+  $('dimW').textContent=`${L.W} cm`; $('dimH').textContent=`${L.H} cm`;
+}
+function drawStats(){
+  let a=0,b=0,ca=0,cb=0,area=0; const bom={};
+  for(const s of L.segs){
+    const t=tone(s); t?a++:b++; if(s.cut)t?ca++:cb++;
+    const len=r1(s.vis), k=len+'|'+(t?'A':'B'); bom[k]=(bom[k]||0)+1;
+  }
+  const n=L.segs.length;
+  $('stats').innerHTML=[
+    ['Colonnes',L.C],['Pièces',n],['Miroir bronze',`${a} <small>(${ca} coupées)</small>`],['Simple teinte',`${b} <small>(${cb} coupées)</small>`],['Espace colonnes',`${r1(L.gx)} cm`]
+  ].map(([t,v])=>`<div><dt>${t}</dt><dd>${v}</dd></div>`).join('');
+  const rows=Object.entries(bom).map(([k,v])=>{const [len,t]=k.split('|');return {len:+len,t,v}}).sort((x,y)=>y.len-x.len||x.t.localeCompare(y.t));
+  $('bom').innerHTML=`<tr><th>Longueur</th><th>Finition</th><th>Quantité</th><th>Type</th></tr>`+rows.map(r=>`<tr><td>${String(r.len).replace(".",",")} cm</td><td><span class="sw" style="background:${r.t==='A'?P.cA:P.cB}"></span>${r.t==='A'?'Miroir bronze':'Simple teinte'}</td><td>${r.v}</td><td>${r.len>=r1(L.pl)?'entière':'coupée'}</td></tr>`).join('');
+}
+function drawCalc(){
+  const lost=L.zw-L.used;
+  $('calc').innerHTML=`<b>${L.C}</b> colonnes · <b>${L.segs.length}</b> pièces · reste <b>${r1(lost)} cm</b> en largeur (${r1(lost/2)} cm de chaque côté)`;
+  if(L.fixed)$('calc').innerHTML=`<b>${L.C}</b> colonnes · <b>${L.segs.length}</b> pièces`+` · pièces de <b>${r1(L.pw)} cm</b>, espace <b>${r1(L.gx)} cm</b>`;
+  if(L.warn)$('calc').innerHTML+=`<br><span class="warn">${L.warn}</span>`;
+  $('colFitWrap').hidden=!L.fixed; $('justifyWrap').hidden=L.fixed;
+  $('shiftOut').textContent=`${P.shift} %`;
+}
+
+let filter='all';
+const FAMNAME={p2:'1 sur 2',p3:'sur 3',p4:'sur 4',p5:'sur 5',p6:'sur 6',libre:'Libres'};
+function drawChips(){
+  const fams=['all',...Object.keys(FAMS)];
+  if(!fams.includes(filter))filter='all';
+  $('chips').innerHTML=fams.map(f=>`<button type="button" class="chip" data-f="${f}" aria-pressed="${f===filter}">${f==='all'?'Toutes':FAMNAME[f]} <span>${f==='all'?LIST.length:FAMS[f].length}</span></button>`).join('');
+  $('chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{filter=b.dataset.f;drawChips();drawLib()});
+}
+function drawLib(){
+  const lib=$('lib'); lib.innerHTML='';
+  const items=LIST.filter(x=>filter==='all'||x.fam===filter);
+  $('libCount').textContent=items.length;
+  const tw=96, sc=tw/L.W, th=Math.round(L.H*sc), dpr=Math.min(2,window.devicePixelRatio||1);
+  const frag=document.createDocumentFragment();
+  for(const it of items){
+    const b=document.createElement('button'); b.type='button'; b.className='card'+(it.key===curKey?' on':''); b.title=it.key;
+    const cv=document.createElement('canvas'); cv.width=tw*dpr; cv.height=th*dpr;
+    const x=cv.getContext('2d'); x.scale(dpr*sc,dpr*sc);
+    x.fillStyle=P.cWall; x.fillRect(0,0,L.W,L.H);
+    x.save(); x.beginPath(); x.rect(L.zx,L.zy,L.zw,L.zh); x.clip();
+    const fn=GENS[it.key].fn;
+    for(const s of L.segs){
+      x.fillStyle=fn(s)?P.cA:P.cB; x.beginPath();
+      x.roundRect?x.roundRect(s.x,s.y,L.pw,L.pl,L.pw/2):x.rect(s.x,s.y,L.pw,L.pl);
+      x.fill();
+    }
+    x.restore();
+    b.append(cv); const sp=document.createElement('span'); sp.textContent=it.id; b.append(sp);
+    b.onclick=()=>{curKey=it.key;invert=false;flips.clear();lib.querySelectorAll('.card.on').forEach(e=>e.classList.remove('on'));b.classList.add('on');drawPreview();drawStats();$('preview').scrollIntoView({behavior:'smooth',block:'nearest'})};
+    frag.append(b);
+  }
+  lib.append(frag);
+}
+
+function update(){
+  layout(); buildGens();
+  if(!GENS[curKey]) curKey=GENS['1/2 · ↓1 · →1 · col c']?'1/2 · ↓1 · →1 · col c':(LIST[0]?.key||Object.keys(GENS)[0]);
+  drawCalc(); drawPreview(); drawStats(); drawChips(); drawLib(); save();
+}
+
+// ---------- Formulaire ----------
+const inputs=[...document.querySelectorAll('[data-k]')];
+function fill(){for(const el of inputs){const k=el.dataset.k;el.type==='checkbox'?el.checked=!!P[k]:el.value=(k==='cols'&&!+P[k])?'':P[k]}}
+let tmr;
+for(const el of inputs){
+  el.addEventListener('input',()=>{
+    const k=el.dataset.k;
+    P[k]=el.type==='checkbox'?el.checked:(el.type==='number'||el.type==='range')?(el.value===''?(k==='cols'?0:P[k]):+el.value):el.value;
+    if(k==='expMode'||k==='expWall'){save();return}
+    clearTimeout(tmr); tmr=setTimeout(update,120);
+  });
+}
+$('bDefaults').onclick=()=>{P={...DEF};fill();update()};
+$('bInv').onclick=()=>{invert=!invert;drawPreview();drawStats()};
+$('bReset').onclick=()=>{flips.clear();drawPreview();drawStats()};
+$('bRand').onclick=()=>{seed=Math.floor(Math.random()*1e9);curKey='aléatoire';invert=false;flips.clear();update()};
+$('bExport').onclick=()=>{
+  const blob=new Blob([buildSVG('export')],{type:'image/svg+xml'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`alternance_${(curItem()?.id||'motif')}_${L.W}x${L.H}cm${P.expMode==='cut'?'_decoupe':''}.svg`;
+  document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+$('bCopy').onclick=async e=>{
+  const btn=e.currentTarget;
+  try{await navigator.clipboard.writeText(buildSVG('export'));btn.textContent='SVG copié'}catch(_){btn.textContent='Copie refusée'}
+  setTimeout(()=>btn.textContent='Copier le SVG',1600);
+};
+fill(); update();
+</script>
+</body>
+</html>
