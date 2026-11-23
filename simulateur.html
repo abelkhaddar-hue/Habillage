@@ -20,7 +20,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.5;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 60px}
-.site{max-width:1400px;margin:0 auto}
+.site{max-width:none;margin:0}
 nav.top{padding-block:0 18px;margin-bottom:24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
 .mark{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:.06em;text-transform:uppercase;display:flex;gap:8px;align-items:center;color:var(--fg);text-decoration:none}
 .mark i{display:inline-block;width:7px;height:20px;border-radius:4px;background:var(--y)}
@@ -29,11 +29,11 @@ nav.top ul{display:flex;gap:20px;list-style:none;margin:0;padding:0;font-size:14
 nav.top ul a{color:var(--muted);text-decoration:none}
 nav.top ul a:hover,nav.top ul a[aria-current]{color:var(--fg)}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-header{max-width:1400px;margin:0 auto 24px;display:grid;gap:8px}
+header{margin:0 0 24px;display:grid;gap:8px}
 h1{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:clamp(40px,6vw,64px);line-height:.92;margin:0}
 header p{margin:0;color:var(--muted);max-width:70ch}
 
-.wrap{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:320px minmax(0,1fr);gap:28px;align-items:start}
+.wrap{display:grid;grid-template-columns:300px minmax(0,1fr) 340px;gap:20px;align-items:start}
 .panel{position:sticky;top:16px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:grid;gap:18px;max-height:calc(100vh - 32px);overflow:auto}
 fieldset{border:0;margin:0;padding:0;display:grid;gap:8px}
 legend{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;padding:0}
@@ -56,6 +56,9 @@ select{font:500 13px var(--body);color:var(--fg);background:var(--bg);border:1px
 [hidden]{display:none!important}
 
 .main{display:grid;gap:28px;min-width:0}
+.side{position:sticky;top:16px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:grid;gap:16px;max-height:calc(100vh - 32px);overflow:auto;min-width:0}
+.side .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.side .stats div{border-bottom:1px solid var(--line)}
 .stage{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:grid;gap:14px}
 .stagehead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
 .stagehead h2{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:28px;margin:0;line-height:1}
@@ -67,7 +70,7 @@ select{font:500 13px var(--body);color:var(--fg);background:var(--bg);border:1px
 .dimh{grid-row:2;writing-mode:vertical-rl;transform:rotate(180deg);justify-content:center}
 .dimh::before,.dimh::after{content:"";flex:1;border-left:1px solid var(--line)}
 #preview{grid-column:2;grid-row:2;display:flex;justify-content:center}
-#preview svg{display:block;width:100%;height:auto;max-height:68vh;box-shadow:0 0 0 1px var(--line)}
+#preview svg{display:block;width:100%;height:auto;max-height:calc(100vh - 400px);min-height:300px;object-fit:contain;box-shadow:0 0 0 1px var(--line)}
 #preview path{cursor:pointer}
 #preview path:hover{opacity:.8}
 .btns{display:flex;flex-wrap:wrap;gap:8px}
@@ -115,12 +118,15 @@ th{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);tex
 .card:focus-visible{outline:2px solid var(--accent)}
 .card span{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
 footer.site{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
-@media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)}.panel{position:static;max-height:none}}
+@media (max-width:1279px){.wrap{grid-template-columns:300px minmax(0,1fr)}.side{grid-column:2;position:static;max-height:none}}
+@media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)}.panel{position:static;max-height:none}.side{grid-column:auto}}
+@media (min-width:1600px){body{padding-left:28px;padding-right:28px}.wrap{grid-template-columns:320px minmax(0,1fr) 380px;gap:24px}}
 /* Mode intégré (iframe sur l'accueil) : sans menu ni en-tête, hauteurs fixes pour éviter une boucle avec la hauteur de l'iframe */
 .embed body{padding:2px 0}
 .embed nav.top,.embed header,.embed footer.site{display:none}
 .embed .panel{position:static;max-height:none}
-.embed #preview svg{max-height:640px}
+.embed #preview svg{max-height:720px;min-height:0}
+.embed .side{position:static;max-height:none}
 </style>
 </head>
 <body>
@@ -242,8 +248,12 @@ footer.site{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);fo
         <button type="button" class="b" id="bReset">Annuler retouches</button>
         <button type="button" class="b" id="bRand">Tirage aléatoire</button>
       </div>
+    </section>
+  </div>
+
+  <aside class="side">
       <dl class="stats" id="stats"></dl>
-      <details>
+      <details class="bomd" open>
         <summary>Liste de débit (pièces par longueur et finition)</summary>
         <table id="bom"></table>
       </details>
@@ -255,8 +265,7 @@ footer.site{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);fo
         </div>
         <ul class="favlist" id="favList"></ul>
       </div>
-    </section>
-  </div>
+  </aside>
 </div>
 
 <footer class="site"><span>Alternances · simulateur</span><span>Export SVG en centimètres, échelle 1:1</span></footer>

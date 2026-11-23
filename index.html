@@ -109,6 +109,7 @@ footer{padding-block:28px;border-top:1px solid var(--line);font-size:13px;color:
   .spec div{border-bottom:1px solid var(--line)}
 }
 @media (prefers-reduced-motion:reduce){.hero-fig rect.s{transition:none}.btn:hover{transform:none}}
+.simwrap{padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
 .sim{display:block;width:100%;height:1400px;border:0;background:transparent}
 .simfull{margin:12px 0 0;font-size:14px}
 </style>
@@ -146,9 +147,12 @@ footer{padding-block:28px;border-top:1px solid var(--line);font-size:13px;color:
   <p class="eyebrow">Simulateur</p>
   <h2>Composez votre mur</h2>
   <p class="intro">Entrez les dimensions du mur et des pièces, choisissez une alternance parmi toutes celles possibles, puis exportez le plan en SVG à l'échelle. Pièces jaunes : miroir bronze. Pièces grises : simple teinte.</p>
-  <iframe class="sim" id="simFrame" src="simulateur.html?embed" title="Simulateur de mur"></iframe>
-  <p class="simfull"><a href="simulateur.html">Ouvrir le simulateur en plein écran →</a></p>
-</div></section>
+</div>
+  <div class="simwrap">
+    <iframe class="sim" id="simFrame" src="simulateur.html?embed" title="Simulateur de mur"></iframe>
+    <p class="simfull"><a href="simulateur.html">Ouvrir le simulateur en plein écran →</a></p>
+  </div>
+</section>
 
 <section id="contact"><div class="in contact">
   <div>
