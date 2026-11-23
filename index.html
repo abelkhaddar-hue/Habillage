@@ -119,10 +119,8 @@ footer{padding-block:28px;border-top:1px solid var(--line);font-size:13px;color:
   <nav class="top">
     <a class="mark" href="#top" id="top"><i></i><i></i>Alternances</a>
     <ul>
-      <li><a href="#principe">Principe</a></li>
-      <li><a href="#familles">Familles</a></li>
-      <li><a href="#originaux">Originaux</a></li>
       <li><a href="#simulateur">Simulateur</a></li>
+      <li><a href="galerie.html">Galerie</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
   </nav>
@@ -152,54 +150,6 @@ footer{padding-block:28px;border-top:1px solid var(--line);font-size:13px;color:
   <p class="simfull"><a href="simulateur.html">Ouvrir le simulateur en plein écran →</a></p>
 </div></section>
 
-<section id="principe"><div class="in">
-  <p class="eyebrow">Principe</p>
-  <h2>Une grille, deux couleurs, une règle</h2>
-  <p class="intro">Tous les panneaux partagent la même trame. Seule la répartition des teintes change, et elle suit toujours un rythme qu'on peut écrire.</p>
-  <div class="facts">
-    <div class="fact">
-      <div id="factGrid"></div>
-      <h3>La trame</h3>
-      <p>11 colonnes. Une sur deux est décalée d'une demi-pilule, ce qui coupe net les pilules du haut et du bas. 60 segments par panneau.</p>
-    </div>
-    <div class="fact">
-      <div class="big">k/p · ↓a · →b</div>
-      <h3>La règle</h3>
-      <p>Sur un cycle de <code>p</code> segments, <code>k</code> sont jaunes. Le cycle avance de <code>a</code> en descendant et se décale de <code>b</code> d'une colonne à l'autre.</p>
-    </div>
-    <div class="fact">
-      <div class="big">2<sup>60</sup> → 247</div>
-      <h3>Le tri</h3>
-      <p>Il existe 1,15 milliard de milliards de coloriages. En gardant les rythmes réguliers, sans doublon ni simple inversion des teintes, il en reste 247.</p>
-    </div>
-  </div>
-</div></section>
-
-<section id="familles"><div class="in">
-  <p class="eyebrow">Familles</p>
-  <h2>Quatre façons d'alterner</h2>
-  <p class="intro">Du rythme le plus strict aux compositions libres. Un extrait de chaque famille ci-dessous ; la série complète est dans la galerie.</p>
-  <div id="fams"></div>
-</div></section>
-
-<section id="originaux"><div class="in">
-  <p class="eyebrow">Frame 58</p>
-  <h2>Les originaux</h2>
-  <p class="intro">Les quatre planches de départ. Toutes appartiennent au rythme 1 sur 2 ; la page 4 est la page 3 avec les teintes inversées.</p>
-  <div class="originals" id="orig"></div>
-</div></section>
-
-<section id="format"><div class="in">
-  <p class="eyebrow">Format</p>
-  <h2>Fiche technique</h2>
-  <dl class="spec">
-    <div><dt>Support</dt><dd>A4 vertical, 210 × 297 mm</dd></div>
-    <div><dt>Fichier</dt><dd>PDF vectoriel</dd></div>
-    <div><dt>Jaune</dt><dd><span class="sw" style="background:var(--y)"></span>#F1ECCB</dd></div>
-    <div><dt>Gris</dt><dd><span class="sw" style="background:var(--g)"></span>#E7E7E7</dd></div>
-  </dl>
-</div></section>
-
 <section id="contact"><div class="in contact">
   <div>
     <p class="eyebrow">Contact</p>
@@ -215,39 +165,6 @@ footer{padding-block:28px;border-top:1px solid var(--line);font-size:13px;color:
 <div class="in"><footer><span>Alternances · série jaune / gris</span><span>Grille Frame 58 · 11 colonnes · 60 segments</span></footer></div>
 
 <script>
-const PW=595,PH=842,W=38,X0=36,DX=(559-36)/10,T=166,L=156,TOP=8;
-const SEGS=[];
-for(let c=0;c<11;c++){const n=c%2===0?5:6,off=c%2===0?TOP:TOP-T/2;for(let j=0;j<n;j++)SEGS.push({c,j,x:X0+c*DX-W/2,y:off+j*T})}
-const Y='var(--y)',G='var(--g)';
-const mk=fn=>SEGS.map(s=>fn(s.c,s.j)?0:1);
-const f2=c=>Math.floor(c/2),f2b=c=>Math.floor((c+1)/2),m=c=>Math.abs(c-5);
-const R=(k,p,a,b,X=c=>c,row=j=>j)=>mk((c,j)=>((a*row(j)+b*X(c))%p)<k);
-function svg(g,cls){
-  let r='';g.forEach((v,i)=>{const s=SEGS[i];r+=`<rect class="${cls||''}" data-i="${i}" x="${s.x.toFixed(1)}" y="${s.y.toFixed(1)}" width="${W}" height="${L}" rx="${W/2}" style="fill:${v?G:Y}"/>`});
-  return `<svg viewBox="0 0 ${PW} ${PH}" aria-hidden="true">${r}</svg>`;
-}
-const sheet=(g,cls)=>`<div class="sheet">${svg(g,cls)}</div>`;
-
-// Trame (schéma)
-document.getElementById('factGrid').innerHTML=`<div style="max-width:150px">${sheet(mk((c,j)=>c%2===1&&(j===0||j===5)))}</div>`;
-
-// Familles
-const FAMS=[
-  ['Rythme 1 sur 2','11 motifs','Alternance stricte : chaque pilule change de teinte avec sa voisine.',[
-    ['1/2 ↓1 →0',R(1,2,1,0)],['1/2 ↓1 →1',R(1,2,1,1)],['col c÷2',R(1,2,1,1,f2)],['col |c−5|',R(1,2,1,1,m)],['↓0 →1',R(1,2,0,1)],['par 2',R(1,2,1,1,c=>c,j=>Math.floor(j/2))]]],
-  ['Rythme sur 3','64 motifs','Un ou deux jaunes par cycle de trois. Les diagonales apparaissent.',[
-    ['1/3 ↓1 →1',R(1,3,1,1)],['1/3 ↓1 →2',R(1,3,1,2)],['2/3 ↓1 →1',R(2,3,1,1)],['2/3 ↓2 →1',R(2,3,2,1)],['1/3 col |c−5|',R(1,3,1,1,m)],['1/3 col c÷2',R(1,3,1,1,f2)]]],
-  ['Rythme sur 4','164 motifs','Cycles plus longs : bandes, escaliers et chevrons.',[
-    ['1/4 ↓1 →1',R(1,4,1,1)],['2/4 ↓1 →1',R(2,4,1,1)],['3/4 ↓1 →2',R(3,4,1,2)],['1/4 ↓1 →3',R(1,4,1,3)],['2/4 col |c−5|',R(2,4,1,1,m)],['1/4 col c÷2',R(1,4,1,2,f2)]]],
-  ['Compositions libres','8 motifs','Hors rythme régulier : dégradés, symétries, accents.',[
-    ['dégradé →',mk((c,j)=>((j*5+c*3)%7)/7<1-c/10)],['dégradé ↓',mk((c,j)=>((c*5+j*3)%7)/7<1-j/5)],['losange',mk((c,j)=>m(c)+Math.abs(j-(c%2?2.5:2))<3.5)],['bande centrale',mk(c=>m(c)<2)],['colonne accent',mk((c,j)=>c===5&&j%2===0)],['moitiés croisées',mk((c,j)=>(c%2===0)===(j<(c%2?3:2.5)))]]],
-];
-document.getElementById('fams').innerHTML=FAMS.map(([t,n,d,list])=>`<div class="fam"><div class="info"><h3>${t}</h3><span class="n">${n}</span><p>${d}</p></div><div class="thumbs">${list.map(([l,g])=>`<figure>${sheet(g)}<figcaption>${l}</figcaption></figure>`).join('')}</div></div>`).join('');
-
-// Originaux
-const p3=R(1,2,1,1);
-const ORIG=[['Page 1','col c÷2',R(1,2,1,1,f2)],['Page 2','col (c+1)÷2',mk((c,j)=>(j+f2b(c)+1)%2===0)],['Page 3','col c',p3],['Page 4','p.3 inversée',p3.map(v=>1-v)]];
-document.getElementById('orig').innerHTML=ORIG.map(([t,s,g])=>`<figure>${sheet(g)}<figcaption>${t}<span>${s}</span></figcaption></figure>`).join('');
 document.querySelectorAll('.copy').forEach(b=>b.addEventListener('click',async()=>{
   try{await navigator.clipboard.writeText(b.dataset.v);b.textContent='Copié'}
   catch(_){const r=document.createRange();r.selectNodeContents(b.previousElementSibling);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);b.textContent='Sélectionné'}
