@@ -346,7 +346,12 @@ function layout(){
 const SHAPES={
   pill:{nom:'Pilule'}, oval:{nom:'Ovale'}, arch:{nom:'Arche'}, archInv:{nom:'Arche inversée'},
   round:{nom:'Rect. arrondi'}, rect:{nom:'Rectangle'}, octo:{nom:'Octogone'}, hexa:{nom:'Hexagone'},
-  losange:{nom:'Losange'}
+  losange:{nom:'Losange'}, triangle:{nom:'Triangle'}, triangleInv:{nom:'Triangle inversé'},
+  fleche:{nom:'Flèche'}, goutte:{nom:'Goutte'}, trapeze:{nom:'Trapèze'}, sablier:{nom:'Sablier'},
+  pointHaut:{nom:'¡ Cercle haut'}, pointBas:{nom:'! Cercle bas'},
+  coussin:{nom:'Coussin'}, cannele2:{nom:'Cannelé 2 lames'}, cannele3:{nom:'Cannelé 3 lames'},
+  chevron:{nom:'Chevron'}, chevronInv:{nom:'Chevron inversé'}, parallelo:{nom:'Biseau'},
+  vague:{nom:'Vague'}, zigzag:{nom:'Zigzag'}
 };
 // renvoie {bp:[y...], hw(v) demi-largeur à la hauteur v, arc(i) rayons de l'arc de la tranche i ou null}
 function shapeDef(y,w,pl,shape){
@@ -370,13 +375,58 @@ function shapeDef(y,w,pl,shape){
     case 'losange': return poly([[y,0],[m,r],[y2,0]]);
     case 'hexa': {const t=Math.min(r,pl/2);return poly([[y,0],[y+t,r],[y2-t,r],[y2,0]])}
     case 'octo': {const c=Math.min(w*.3,pl/2);return poly([[y,r-c],[y+c,r],[y2-c,r],[y2,r-c]])}
+    case 'coussin': {const k=Math.min(w*.42,pl/2);return rounded(k,k)}
+    case 'triangle': return poly([[y,0],[y2,r]]);
+    case 'triangleInv': return poly([[y,r],[y2,0]]);
+    case 'fleche': {const t=Math.min(r,pl/2);return poly([[y,0],[y+t,r],[y2,r]])}
+    case 'trapeze': return poly([[y,r*.55],[y2,r]]);
+    case 'sablier': return poly([[y,r],[m,r*.45],[y2,r]]);
+    case 'goutte': {const b=y2-rr;          // pointe en haut, fond arrondi
+      return {bp:[y,b,y2],hw:v=>v<b?(b>y?r*(v-y)/(b-y):r):r-rr+Math.sqrt(Math.max(0,rr*rr-(v-b)**2)),arc:i=>i===1?[rr,rr]:null}}
     default: return rounded(rr,rr);       // pilule
   }
 }
 // Contour d'une pièce coupée entre yt et yb (arcs exacts, droites exactes)
-function piece(s){
-  const {pw:w,pl}=L, cx=s.x+w/2, yt=s.yt, yb=s.yb, D=shapeDef(s.y,w,pl,P.shape);
-  const f=n=>+n.toFixed(2);
+// Éléments physiques d'une pièce, visibles entre a et b. Formes composées : un cercle et une pilule
+// l'un au-dessus de l'autre, comme « ¡ » ou « ! » (séparés par l'espace entre pièces).
+function parts(s){
+  const {pw:w,pl}=L;
+  let list=[[s.y,pl,P.shape]];
+  if(P.shape==='pointHaut'||P.shape==='pointBas'){
+    const g=Math.max(1,+L.gy||0), rest=pl-w-g;
+    list=rest<w?[[s.y,pl,'pill']]:P.shape==='pointHaut'?[[s.y,w,'pill'],[s.y+w+g,rest,'pill']]:[[s.y,rest,'pill'],[s.y+rest+g,w,'pill']];
+  }
+  let cols=[[0,w]];                               // lames côte à côte (cannelé)
+  if(P.shape==='cannele2'||P.shape==='cannele3'){
+    const n=P.shape==='cannele2'?2:3, g=Math.max(.3,w*.08), lw=(w-(n-1)*g)/n;
+    cols=[...Array(n)].map((_,i)=>[i*(lw+g),lw]); list=[[s.y,pl,'pill']];
+  }
+  return cols.flatMap(([dx,cw])=>list.map(([y,h,shape])=>({dx,w:cw,y,h,shape,a:Math.max(y,s.yt),b:Math.min(y+h,s.yb)}))).filter(p=>p.b-p.a>.05);
+}
+function piece(s){return parts(s).map(p=>outline(s.x+p.dx,p.y,p.w,p.h,p.shape,p.a,p.b)).join('')}
+// Formes libres décrites par un polygone (u de 0 à 1 en largeur, v de 0 à 1 en longueur)
+function polyPts(shape,w,h){
+  const N=64, k=Math.max(1,Math.round(h/(w*3)));   // nombre d'ondulations selon l'élancement
+  const band=(fc)=>{const R=[],Lf=[];for(let i=0;i<=N;i++){const v=i/N,c=fc(v);R.push([c+.3,v]);Lf.unshift([c-.3,v])}return R.concat(Lf)};
+  switch(shape){
+    case 'chevron': {const t=Math.min(.45,.5*w/h);return [[0,0],[.5,t],[1,0],[1,1-t],[.5,1],[0,1-t]]}
+    case 'chevronInv': {const t=Math.min(.45,.5*w/h);return [[.5,0],[1,t],[1,1],[.5,1-t],[0,1],[0,t]]}
+    case 'parallelo': {const t=Math.min(.45,w/h);return [[0,t],[1,0],[1,1-t],[0,1]]}
+    case 'vague': return band(v=>.5+.2*Math.sin(2*Math.PI*k*v));
+    case 'zigzag': return band(v=>{const p=(v*k*2)%2;return .5+.2*(p<1?2*p-1:3-2*p)});
+  }
+  return null;
+}
+// coupe un polygone entre les hauteurs yt et yb (Sutherland-Hodgman)
+function clipY(pts,yt,yb){
+  const cut=(P0,keep,yl)=>{const o=[];for(let i=0;i<P0.length;i++){const A=P0[i],B=P0[(i+1)%P0.length],ka=keep(A[1]),kb=keep(B[1]);
+    if(ka)o.push(A); if(ka!==kb){const t=(yl-A[1])/(B[1]-A[1]);o.push([A[0]+t*(B[0]-A[0]),yl])}}return o};
+  return cut(cut(pts,v=>v>=yt,yt),v=>v<=yb,yb);
+}
+function outline(x,y,w,pl,shape,yt,yb){
+  const f=n=>+n.toFixed(2), PP=polyPts(shape,w,pl);
+  if(PP){const c=clipY(PP.map(([u,v])=>[x+u*w,y+v*pl]),yt,yb);return c.length<3?'':'M'+c.map(([a,b])=>`${f(a)},${f(b)}`).join('L')+'Z'}
+  const cx=x+w/2, D=shapeDef(y,w,pl,shape);
   const pt=(k,v)=>`${f(cx+k*D.hw(v))},${f(v)}`;
   const cuts=[yt]; for(const v of D.bp) if(v>yt+1e-6&&v<yb-1e-6) cuts.push(v); cuts.push(yb);
   const tr=i=>{const m=(cuts[i-1]+cuts[i])/2;let k=0;while(k<D.bp.length-2&&m>D.bp[k+1])k++;return D.arc(k)};
@@ -393,7 +443,7 @@ function drawShapes(){
   box.innerHTML=Object.entries(SHAPES).map(([k,v])=>`<button type="button" role="radio" data-shape="${k}" aria-checked="${P.shape===k}" title="${v.nom}"><svg viewBox="-1 -1 12 32"><path/></svg>${v.nom}</button>`).join('');
   const cur=P.shape;
   box.querySelectorAll('button').forEach(b=>{
-    P.shape=b.dataset.shape; L={...sv,pw:10,pl:30};
+    P.shape=b.dataset.shape; L={...sv,pw:10,pl:30,gy:3};
     b.querySelector('path').setAttribute('d',piece({x:0,y:0,yt:0,yb:30}));
     b.onclick=()=>{P.shape=b.dataset.shape;update()};
   });
@@ -494,14 +544,14 @@ function drawStats(){
   let a=0,b=0,ca=0,cb=0,area=0; const bom={};
   for(const s of L.segs){
     const t=tone(s); t?a++:b++; if(s.cut)t?ca++:cb++;
-    const len=r1(s.vis), k=len+'|'+(t?'A':'B'); bom[k]=(bom[k]||0)+1;
+    for(const p of parts(s)){const len=r1(p.b-p.a), k=len+'|'+(t?'A':'B')+'|'+(len>=r1(p.h)?'entière':'coupée'); bom[k]=(bom[k]||0)+1}
   }
   const n=L.segs.length;
   $('stats').innerHTML=[
     ['Colonnes',L.C],['Pièces',n],['Miroir bronze',`${a} <small>(${ca} coupées)</small>`],['Simple teinte',`${b} <small>(${cb} coupées)</small>`],['Espace colonnes',`${r1(L.gx)} cm`]
   ].map(([t,v])=>`<div><dt>${t}</dt><dd>${v}</dd></div>`).join('');
-  const rows=Object.entries(bom).map(([k,v])=>{const [len,t]=k.split('|');return {len:+len,t,v}}).sort((x,y)=>y.len-x.len||x.t.localeCompare(y.t));
-  $('bom').innerHTML=`<tr><th>Longueur</th><th>Finition</th><th>Quantité</th><th>Type</th></tr>`+rows.map(r=>`<tr><td>${String(r.len).replace(".",",")} cm</td><td><span class="sw" style="background:${r.t==='A'?P.cA:P.cB}"></span>${r.t==='A'?'Miroir bronze':'Simple teinte'}</td><td>${r.v}</td><td>${r.len>=r1(L.pl)?'entière':'coupée'}</td></tr>`).join('');
+  const rows=Object.entries(bom).map(([k,v])=>{const [len,t,ty]=k.split('|');return {len:+len,t,ty,v}}).sort((x,y)=>y.len-x.len||x.t.localeCompare(y.t));
+  $('bom').innerHTML=`<tr><th>Longueur</th><th>Finition</th><th>Quantité</th><th>Type</th></tr>`+rows.map(r=>`<tr><td>${String(r.len).replace(".",",")} cm</td><td><span class="sw" style="background:${r.t==='A'?P.cA:P.cB}"></span>${r.t==='A'?'Miroir bronze':'Simple teinte'}</td><td>${r.v}</td><td>${r.ty}</td></tr>`).join('');
 }
 function drawCalc(){
   const lost=L.zw-L.used;
