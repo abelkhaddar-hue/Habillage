@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
 <style>
-/* Layout: colonnes étroites et hautes comme les pilules ; hero en deux colonnes (titre vertical / panneau animé), puis sections empilées sur une grille de 11 colonnes */
+/* Layout: colonnes étroites et hautes comme les pilules ; hero : photo en fond plein écran, texte par-dessus, puis sections empilées sur une grille de 11 colonnes */
 :root{
   --paper:#fbfbf7; --ink:#23231d; --muted:#6d6c60; --line:#e2e1d6; --sheet:#ffffff; --ochre:#7d6c12;
   --y:#f1eccb; --g:#e7e7e7;
@@ -33,10 +33,17 @@ nav.top ul{display:flex;gap:20px;list-style:none;margin:0;padding:0;font-size:14
 nav.top ul a{color:var(--muted);text-decoration:none}
 nav.top ul a:hover{color:var(--ink)}
 
-.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:48px;align-items:center;padding-block:32px 72px}
-.hero h1{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:clamp(52px,9vw,120px);line-height:.86;letter-spacing:.01em;margin:0 0 24px}
+.hero-bg{position:relative;display:flex;align-items:flex-end;min-height:clamp(520px,86vh,920px);color:#fff;
+  background:linear-gradient(90deg,rgba(20,18,12,.78) 0%,rgba(20,18,12,.5) 45%,rgba(20,18,12,.08) 80%),linear-gradient(0deg,rgba(20,18,12,.55),transparent 55%),url(hero.webp) center 55%/cover no-repeat #2a2620}
+.hero{width:100%;padding-block:64px}
+.hero-bg .lede{color:rgba(255,255,255,.9)}
+.hero-bg .btn{color:#fff;border-color:rgba(255,255,255,.85)}
+.hero-bg .btn.primary{background:#fff;color:#23231d;border-color:#fff}
+.hero-bg .btn:hover{background:rgba(255,255,255,.12)}
+.hero-bg .btn.primary:hover{background:#f1eccb;border-color:#f1eccb}
+.hero h1{text-shadow:0 2px 24px rgba(0,0,0,.35);font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:clamp(52px,9vw,120px);line-height:.86;letter-spacing:.01em;margin:0 0 24px}
 .hero h1 span{display:block}
-.hero h1 .y{display:inline;-webkit-box-decoration-break:clone;box-decoration-break:clone;color:var(--ink);background:linear-gradient(transparent 58%,var(--y) 58% 92%,transparent 92%)}
+.hero h1 .y{display:inline;-webkit-box-decoration-break:clone;box-decoration-break:clone;color:#f1eccb}
 .lede{font-size:19px;max-width:34ch;margin:0 0 28px;color:var(--ink)}
 .cta{display:flex;gap:12px;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:10px;font:600 15px var(--body);padding:12px 20px;border-radius:999px;text-decoration:none;border:1.5px solid var(--ink);color:var(--ink)}
@@ -100,7 +107,8 @@ code{font-family:var(--mono);font-size:.88em;background:var(--y);color:#23231d;p
 footer{padding-block:28px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 
 @media (max-width:860px){
-  .hero,.contact{grid-template-columns:minmax(0,1fr)}
+  .contact{grid-template-columns:minmax(0,1fr)}
+  .hero-bg{background-position:65% 55%}
   .facts{grid-template-columns:minmax(0,1fr)}
   .fam{grid-template-columns:minmax(0,1fr)}
   .thumbs{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -126,22 +134,19 @@ footer{padding-block:28px;border-top:1px solid var(--line);font-size:13px;color:
     </ul>
   </nav>
 
-  <div class="hero">
-    <div>
-      <h1><span>Vos murs</span><span class="y">prennent du relief.</span><span>Pilule par pilule.</span></h1>
-      <p class="lede">Une série de panneaux en deux teintes douces. Onze colonnes de pilules décalées, et une seule question à chaque segment.</p>
-      <div class="cta">
-        <a class="btn primary" href="galerie.html">Parcourir les 247 motifs</a>
-        <a class="btn" href="#simulateur">Simuler mon mur</a>
-        <a class="btn" href="#contact">Commander un panneau</a>
-      </div>
-    </div>
-    <figure class="hero-fig">
-      <img class="photo" src="hero.webp" width="1447" height="1087" alt="Entrée habillée de pilules verticales décalées, panneaux blancs et miroirs bronze">
-      <figcaption class="cap">Une alternance posée au mur : pilules laquées et miroirs.</figcaption>
-    </figure>
-  </div>
 </div>
+
+<header class="hero-bg">
+  <div class="in hero">
+    <h1><span>Vos murs</span><span class="y">prennent du relief.</span><span>Pilule par pilule.</span></h1>
+    <p class="lede">Une série de panneaux en deux teintes douces. Onze colonnes de pilules décalées, et une seule question à chaque segment.</p>
+    <div class="cta">
+      <a class="btn primary" href="galerie.html">Parcourir les 247 motifs</a>
+      <a class="btn" href="#simulateur">Simuler mon mur</a>
+      <a class="btn" href="#contact">Commander un panneau</a>
+    </div>
+  </div>
+</header>
 
 <section id="simulateur"><div class="in">
   <p class="eyebrow">Simulateur</p>
