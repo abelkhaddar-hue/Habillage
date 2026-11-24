@@ -47,6 +47,12 @@ label.f{display:grid;gap:3px;font-size:12.5px;color:var(--muted)}
 input[type=range]{width:100%;accent-color:var(--accent)}
 label.chk{display:flex;gap:8px;align-items:center;font-size:13px}
 select{font:500 13px var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 8px;width:100%}
+.shapes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.shapes button{display:grid;justify-items:center;gap:2px;padding:6px 2px 4px;border:1px solid var(--line);border-radius:8px;background:none;color:var(--ink);font:500 10.5px var(--body);cursor:pointer;line-height:1.2}
+.shapes button:hover{border-color:var(--muted)}
+.shapes button[aria-checked="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.shapes svg{width:18px;height:34px;display:block}
+.shapes svg path{fill:var(--y,#f1eccb);stroke:currentColor;stroke-width:.6}
 .colors{display:flex;gap:12px;flex-wrap:wrap}
 .colors label{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
 .colors input{width:30px;height:24px;border:1px solid var(--line);padding:0;background:none;border-radius:4px}
@@ -162,6 +168,8 @@ footer.site{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);fo
 
     <fieldset>
       <legend>Pièces</legend>
+      <div class="f">Forme <b id="shapeOut"></b></div>
+      <div class="shapes" id="shapes" role="radiogroup" aria-label="Forme des pièces"></div>
       <div class="row">
         <label class="f">Largeur pièce<span class="inp"><input type="number" data-k="pw" min="1" step="0.5"><span>cm</span></span></label>
         <label class="f">Longueur pièce<span class="inp"><input type="number" data-k="pl" min="1" step="0.5"><span>cm</span></span></label>
@@ -277,7 +285,7 @@ if(document.documentElement.classList.contains('embed')&&parent!==window){
   new ResizeObserver(send).observe(document.body); addEventListener('load',send);
 }
 const r1=n=>Math.round(n*10)/10;
-const DEF={wallW:300,wallH:250,mX:0,mY:0,pw:10,pl:42,gx:4,gy:2.5,justify:false,plAuto:true,rows:0,cols:0,colFit:'gap',shift:50,align:'top',minCut:4,
+const DEF={shape:'pill',wallW:300,wallH:250,mX:0,mY:0,pw:10,pl:42,gx:4,gy:2.5,justify:false,plAuto:true,rows:0,cols:0,colFit:'gap',shift:50,align:'top',minCut:4,
   cA:'#f1eccb',cB:'#e7e7e7',cWall:'#ffffff',sheen:true,pmax:'4',expMode:'fill',expWall:true};
 let P={...DEF};
 try{Object.assign(P,JSON.parse(localStorage.getItem('alt-sim-cm')||'{}'))}catch(_){}
@@ -334,19 +342,64 @@ function layout(){
   L={W,H,zx,zy,zw,zh,pw,pl,gx,gy,C,R,T,x0,used,segs,warn,fixed:nC>=1,nRows,restH};
 }
 
-// Contour d'une pièce (pilule) coupée entre yt et yb, en arcs exacts
-function pill(s){
-  const {pw:w,pl}=L, r=w/2, cx=s.x+r, a=s.y+r, b=s.y+pl-r, yt=s.yt, yb=s.yb;
+// Formes disponibles. Chaque forme est décrite par ses « tranches » verticales :
+// entre deux hauteurs, le bord est soit une droite, soit un arc (cercle ou ellipse).
+const SHAPES={
+  pill:{nom:'Pilule'}, oval:{nom:'Ovale'}, arch:{nom:'Arche'}, archInv:{nom:'Arche inversée'},
+  round:{nom:'Rect. arrondi'}, rect:{nom:'Rectangle'}, octo:{nom:'Octogone'}, hexa:{nom:'Hexagone'},
+  losange:{nom:'Losange'}
+};
+// renvoie {bp:[y...], hw(v) demi-largeur à la hauteur v, arc(i) rayons de l'arc de la tranche i ou null}
+function shapeDef(y,w,pl,shape){
+  const r=w/2, y2=y+pl, m=y+pl/2;
+  const rounded=(rt,rb)=>{                  // rectangle aux angles arrondis (rayons haut / bas)
+    const a=y+rt, b=y2-rb;
+    return {bp:[y,a,b,y2],
+      hw:v=>v<a?r-rt+Math.sqrt(Math.max(0,rt*rt-(a-v)**2)):v>b?r-rb+Math.sqrt(Math.max(0,rb*rb-(v-b)**2)):r,
+      arc:i=>i===0?(rt?[rt,rt]:null):i===2?(rb?[rb,rb]:null):null};
+  };
+  const poly=(pts)=>({bp:pts.map(p=>p[0]),           // contour fait de droites : [hauteur, demi-largeur]
+      hw:v=>{for(let i=1;i<pts.length;i++){const[a,ha]=pts[i-1],[b,hb]=pts[i];if(v<=b+1e-9)return b>a?ha+(hb-ha)*(v-a)/(b-a):hb}return pts.at(-1)[1]},
+      arc:()=>null});
+  const rr=Math.min(r,pl/2);
+  switch(shape){
+    case 'rect': return rounded(0,0);
+    case 'round': {const k=Math.min(w*.25,pl/2);return rounded(k,k)}
+    case 'arch': return rounded(rr,0);
+    case 'archInv': return rounded(0,rr);
+    case 'oval': return {bp:[y,m,y2],hw:v=>r*Math.sqrt(Math.max(0,1-((v-m)/(pl/2))**2)),arc:()=>[r,pl/2]};
+    case 'losange': return poly([[y,0],[m,r],[y2,0]]);
+    case 'hexa': {const t=Math.min(r,pl/2);return poly([[y,0],[y+t,r],[y2-t,r],[y2,0]])}
+    case 'octo': {const c=Math.min(w*.3,pl/2);return poly([[y,r-c],[y+c,r],[y2-c,r],[y2,r-c]])}
+    default: return rounded(rr,rr);       // pilule
+  }
+}
+// Contour d'une pièce coupée entre yt et yb (arcs exacts, droites exactes)
+function piece(s){
+  const {pw:w,pl}=L, cx=s.x+w/2, yt=s.yt, yb=s.yb, D=shapeDef(s.y,w,pl,P.shape);
   const f=n=>+n.toFixed(2);
-  const hw=v=>v<a?Math.sqrt(Math.max(0,r*r-(a-v)**2)):v>b?Math.sqrt(Math.max(0,r*r-(v-b)**2)):r;
-  const pt=(k,v)=>`${f(cx+k*hw(v))},${f(v)}`;
-  const cuts=[yt]; if(a>yt&&a<yb)cuts.push(a); if(b>yt&&b<yb&&b>a)cuts.push(b); cuts.push(yb);
-  const arc=(i)=>{const m=(cuts[i-1]+cuts[i])/2;return m<a||m>b};
+  const pt=(k,v)=>`${f(cx+k*D.hw(v))},${f(v)}`;
+  const cuts=[yt]; for(const v of D.bp) if(v>yt+1e-6&&v<yb-1e-6) cuts.push(v); cuts.push(yb);
+  const tr=i=>{const m=(cuts[i-1]+cuts[i])/2;let k=0;while(k<D.bp.length-2&&m>D.bp[k+1])k++;return D.arc(k)};
+  const seg=(i,k,to)=>{const a=tr(i);return a?`A${f(a[0])},${f(a[1])} 0 0 1 ${pt(k,to)}`:`L${pt(k,to)}`};
   let d=`M${pt(-1,yt)}L${pt(1,yt)}`;
-  for(let i=1;i<cuts.length;i++) d+=arc(i)?`A${f(r)},${f(r)} 0 0 1 ${pt(1,cuts[i])}`:`L${pt(1,cuts[i])}`;
+  for(let i=1;i<cuts.length;i++) d+=seg(i,1,cuts[i]);
   d+=`L${pt(-1,yb)}`;
-  for(let i=cuts.length-1;i>0;i--) d+=arc(i)?`A${f(r)},${f(r)} 0 0 1 ${pt(-1,cuts[i-1])}`:`L${pt(-1,cuts[i-1])}`;
+  for(let i=cuts.length-1;i>0;i--) d+=seg(i,-1,cuts[i-1]);
   return d+'Z';
+}
+// pictogrammes des formes (pièce de 10 × 30)
+function drawShapes(){
+  const box=$('shapes'), sv=L; 
+  box.innerHTML=Object.entries(SHAPES).map(([k,v])=>`<button type="button" role="radio" data-shape="${k}" aria-checked="${P.shape===k}" title="${v.nom}"><svg viewBox="-1 -1 12 32"><path/></svg>${v.nom}</button>`).join('');
+  const cur=P.shape;
+  box.querySelectorAll('button').forEach(b=>{
+    P.shape=b.dataset.shape; L={...sv,pw:10,pl:30};
+    b.querySelector('path').setAttribute('d',piece({x:0,y:0,yt:0,yb:30}));
+    b.onclick=()=>{P.shape=b.dataset.shape;update()};
+  });
+  P.shape=cur; L=sv;
+  $('shapeOut').textContent=(SHAPES[P.shape]||SHAPES.pill).nom;
 }
 
 // ---------- Alternances ----------
@@ -404,12 +457,12 @@ function buildSVG(mode){
   const A=[],B=[];
   L.segs.forEach((s,i)=>(tone(s)?A:B).push({s,i}));
   if(mode==='preview'){
-    const p=arr=>arr.map(({s,i})=>`<path data-i="${i}" d="${pill(s)}"><title>Colonne ${s.c+1}, pièce ${s.j+1} · ${r1(s.vis)} cm${s.cut?' (coupée)':''}</title></path>`).join('');
+    const p=arr=>arr.map(({s,i})=>`<path data-i="${i}" d="${piece(s)}"><title>Colonne ${s.c+1}, pièce ${s.j+1} · ${r1(s.vis)} cm${s.cut?' (coupée)':''}</title></path>`).join('');
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${f(W)} ${f(H)}" role="img" aria-label="Aperçu du mur"><rect width="${f(W)}" height="${f(H)}" fill="${P.cWall}"/>${(zx||zy)?`<rect x="${f(zx)}" y="${f(zy)}" width="${f(zw)}" height="${f(zh)}" fill="none" stroke="#000" stroke-opacity=".12" stroke-dasharray="1.2 1" stroke-width="0.2"/>`:''}<g fill="${P.cA}">${p(A)}</g><g fill="${P.cB}">${p(B)}</g></svg>`.replace(`<g fill="${P.cA}">`,P.sheen?`<defs><linearGradient id="mir" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${f(W)}" y2="${f(H)}">${[[0,-.25],[.18,.35],[.3,-.1],[.5,.15],[.62,.5],[.7,0],[.88,-.3],[1,.2]].map(([o,t])=>`<stop offset="${o}" stop-color="${shade(P.cA,t)}"/>`).join('')}</linearGradient></defs><g fill="url(#mir)">`:`<g fill="${P.cA}">`);
   }
   const cut=P.expMode==='cut';
-  const layer=(id,label,color,arr)=>`  <g id="${id}" inkscape:groupmode="layer" inkscape:label="${label}" ${cut?`fill="none" stroke="${color}" stroke-width="0.05"`:`fill="${color}"`}>\n${arr.map(({s})=>`    <path d="${pill(s)}"/>`).join('\n')}\n  </g>`;
-  const meta=`Mur ${f(W)} x ${f(H)} cm · pièces ${L.pw} x ${L.pl} cm · espaces ${f(L.gx)} / ${L.gy} cm · ${curTitle()}`;
+  const layer=(id,label,color,arr)=>`  <g id="${id}" inkscape:groupmode="layer" inkscape:label="${label}" ${cut?`fill="none" stroke="${color}" stroke-width="0.05"`:`fill="${color}"`}>\n${arr.map(({s})=>`    <path d="${piece(s)}"/>`).join('\n')}\n  </g>`;
+  const meta=`Mur ${f(W)} x ${f(H)} cm · ${(SHAPES[P.shape]||SHAPES.pill).nom.toLowerCase()} ${L.pw} x ${L.pl} cm · espaces ${f(L.gx)} / ${L.gy} cm · ${curTitle()}`;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="${f(W)}cm" height="${f(H)}cm" viewBox="0 0 ${f(W)} ${f(H)}">
   <title>${esc(meta)}</title>
@@ -485,9 +538,8 @@ function drawLib(){
     x.save(); x.beginPath(); x.rect(L.zx,L.zy,L.zw,L.zh); x.clip();
     const fn=GENS[it.key].fn;
     for(const s of L.segs){
-      x.fillStyle=fn(s)?P.cA:P.cB; x.beginPath();
-      x.roundRect?x.roundRect(s.x,s.y,L.pw,L.pl,L.pw/2):x.rect(s.x,s.y,L.pw,L.pl);
-      x.fill();
+      x.fillStyle=fn(s)?P.cA:P.cB;
+      x.fill(new Path2D(piece(s)));
     }
     x.restore();
     b.append(cv); const sp=document.createElement('span'); sp.textContent=it.id; b.append(sp);
@@ -514,7 +566,7 @@ $('lib').addEventListener('keydown',e=>{if(e.key==='ArrowRight'){e.preventDefaul
 function update(){
   layout(); buildGens();
   if(!GENS[curKey]) curKey=GENS['1/2 · ↓1 · →1 · col c']?'1/2 · ↓1 · →1 · col c':(LIST[0]?.key||Object.keys(GENS)[0]);
-  drawCalc(); drawPreview(); drawStats(); drawChips(); drawLib(); save();
+  drawShapes(); drawCalc(); drawPreview(); drawStats(); drawChips(); drawLib(); save();
 }
 
 // ---------- Formulaire ----------
@@ -550,7 +602,7 @@ let favs=[], favOn=null;
 try{favs=JSON.parse(localStorage.getItem(FKEY)||'[]')}catch(_){favs=[]}
 const saveFavs=()=>{try{localStorage.setItem(FKEY,JSON.stringify(favs));return true}catch(_){return false}};
 const nf=n=>String(r1(n)).replace('.',',');
-function favSummary(){const it=curItem();return `${nf(L.W)} × ${nf(L.H)} cm · ${L.C} col. · pièces ${nf(L.pw)} × ${nf(L.pl)} cm · ${it?it.id:'motif'}${invert?' inversé':''}${flips.size?' + '+flips.size+' retouche(s)':''}`}
+function favSummary(){const it=curItem();return `${nf(L.W)} × ${nf(L.H)} cm · ${L.C} col. · ${(SHAPES[P.shape]||SHAPES.pill).nom.toLowerCase()} ${nf(L.pw)} × ${nf(L.pl)} cm · ${it?it.id:'motif'}${invert?' inversé':''}${flips.size?' + '+flips.size+' retouche(s)':''}`}
 function drawFavs(){
   const ul=$('favList');
   if(!favs.length){ul.innerHTML='<li class="empty">Aucun favori pour l\'instant. Donnez un nom au calcul et enregistrez-le pour le retrouver plus tard.</li>';return}
